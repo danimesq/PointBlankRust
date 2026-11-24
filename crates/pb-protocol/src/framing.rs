@@ -28,7 +28,8 @@ pub struct Frame {
 /// Incremental decoder for the server-to-client TCP byte stream.
 ///
 /// Plain frames occupy 5 + payload_len wire bytes; encrypted frames occupy
-/// 3 + payload_len. The five/one trailer bytes are not part of the payload.
+/// 3 + payload_len. The plain server header declares N + 2, so the first two
+/// of the five zero trailer bytes are included in the emitted payload.
 #[derive(Debug, Default)]
 pub struct FrameDecoder {
     pending: Vec<u8>,
@@ -107,9 +108,13 @@ mod tests {
         let frames = [first, second, third].concat();
 
         assert_eq!(frames.len(), 2);
-        assert_eq!(&frames[0].payload, &[0x02, 0x09, 1, 2, 3]);
+        assert_eq!(frames[0].payload.len(), 7);
+        assert_eq!(&frames[0].payload[..5], &[0x02, 0x09, 1, 2, 3]);
+        assert_eq!(&frames[0].payload[5..], &[0, 0]);
         assert!(!frames[0].encrypted);
+        assert_eq!(frames[1].payload.len(), 4);
         assert_eq!(&frames[1].payload[..2], &[0x1d, 0x09]);
+        assert_eq!(&frames[1].payload[2..], &[0, 0]);
         assert_eq!(decoder.pending_len(), 0);
     }
 
