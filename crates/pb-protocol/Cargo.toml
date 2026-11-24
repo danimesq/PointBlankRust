@@ -1,0 +1,5 @@
+[package]
+name = "pb-protocol"
+version = "0.1.0"
+edition = "2021"
+description = "Point Blank binary protocol primitives and compatibility codecs"
