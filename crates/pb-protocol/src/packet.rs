@@ -65,11 +65,14 @@ impl<'a> PacketReader<'a> {
     }
 
     fn take(&mut self, count: usize) -> Result<&'a [u8], PacketError> {
-        let end = self.position.checked_add(count).ok_or(PacketError::UnexpectedEnd {
-            offset: self.position,
-            needed: count,
-            remaining: self.remaining(),
-        })?;
+        let end = self
+            .position
+            .checked_add(count)
+            .ok_or(PacketError::UnexpectedEnd {
+                offset: self.position,
+                needed: count,
+                remaining: self.remaining(),
+            })?;
 
         if end > self.data.len() {
             return Err(PacketError::UnexpectedEnd {
@@ -139,7 +142,10 @@ impl<'a> PacketReader<'a> {
     /// Invalid UTF-8 is replaced, matching the reference TextDecoder behavior.
     pub fn read_s(&mut self, count: usize) -> Result<String, PacketError> {
         let bytes = self.take(count)?;
-        let end = bytes.iter().position(|byte| *byte == 0).unwrap_or(bytes.len());
+        let end = bytes
+            .iter()
+            .position(|byte| *byte == 0)
+            .unwrap_or(bytes.len());
         Ok(String::from_utf8_lossy(&bytes[..end]).into_owned())
     }
 

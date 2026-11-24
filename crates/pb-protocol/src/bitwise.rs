@@ -24,8 +24,7 @@ pub fn bitwise_encrypt(data: &[u8], shift: u8) -> Result<Vec<u8>, InvalidShift> 
     let first = output[0];
 
     for index in 0..output.len() - 1 {
-        output[index] = (output[index + 1] >> (8 - shift))
-            | (output[index] << shift);
+        output[index] = (output[index + 1] >> (8 - shift)) | (output[index] << shift);
     }
 
     let last = output.len() - 1;
@@ -46,8 +45,7 @@ pub fn bitwise_decrypt(data: &[u8], shift: u8) -> Result<Vec<u8>, InvalidShift> 
     let last = output[output.len() - 1];
 
     for index in (1..output.len()).rev() {
-        output[index] = (output[index - 1] << (8 - shift))
-            | (output[index] >> shift);
+        output[index] = (output[index - 1] << (8 - shift)) | (output[index] >> shift);
     }
 
     output[0] = (last << (8 - shift)) | (output[0] >> shift);

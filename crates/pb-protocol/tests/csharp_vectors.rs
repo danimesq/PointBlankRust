@@ -5,8 +5,7 @@
 
 use pb_protocol::bitwise::{bitwise_decrypt, bitwise_encrypt};
 use pb_protocol::cmess::{
-    cmess_decrypt, cmess_encrypt_with_random, next_session_seed, CmessRandom, MODE_AUTH,
-    MODE_GAME,
+    cmess_decrypt, cmess_encrypt_with_random, next_session_seed, CmessRandom, MODE_AUTH, MODE_GAME,
 };
 
 fn from_hex(value: &str) -> Vec<u8> {

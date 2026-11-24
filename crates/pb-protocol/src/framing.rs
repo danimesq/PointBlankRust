@@ -49,10 +49,7 @@ impl FrameDecoder {
         let mut offset = 0;
 
         while self.pending.len().saturating_sub(offset) >= 2 {
-            let header = u16::from_le_bytes([
-                self.pending[offset],
-                self.pending[offset + 1],
-            ]);
+            let header = u16::from_le_bytes([self.pending[offset], self.pending[offset + 1]]);
             let encrypted = (header & ENCRYPTED_FLAG) != 0;
             let payload_len = usize::from(header & !ENCRYPTED_FLAG);
             let wire_len = if encrypted {

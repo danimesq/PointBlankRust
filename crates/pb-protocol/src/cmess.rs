@@ -104,8 +104,7 @@ impl Keystream {
         k0.copy_from_slice(&key[..8]);
         k1.copy_from_slice(&key[8..16]);
 
-        let (p0, p1, step) =
-            derive_initial_state(random.r0, random.r1, random.r2, mode);
+        let (p0, p1, step) = derive_initial_state(random.r0, random.r1, random.r2, mode);
 
         Ok(Self {
             k0,
@@ -145,12 +144,7 @@ pub fn cmess_encrypt_with_random(
     let pad_len = (2usize.wrapping_sub(plaintext.len()) & 7) + 2;
 
     let mut output = Vec::with_capacity(4 + plaintext.len() + pad_len);
-    output.extend_from_slice(&[
-        random.r0,
-        random.r1,
-        random.r2,
-        pad_len as u8,
-    ]);
+    output.extend_from_slice(&[random.r0, random.r1, random.r2, pad_len as u8]);
 
     for &plain_byte in plaintext {
         let cipher_byte = stream.next() ^ plain_byte;
@@ -168,11 +162,7 @@ pub fn cmess_encrypt_with_random(
 }
 
 /// Decrypt a CMess payload. Invalid header, key, or padding is returned as an error.
-pub fn cmess_decrypt(
-    key: &[u8],
-    ciphertext: &[u8],
-    mode: u8,
-) -> Result<Vec<u8>, CmessError> {
+pub fn cmess_decrypt(key: &[u8], ciphertext: &[u8], mode: u8) -> Result<Vec<u8>, CmessError> {
     if ciphertext.len() < 4 {
         return Err(CmessError::InvalidCiphertext);
     }
@@ -217,9 +207,7 @@ pub fn cmess_decrypt(
 
 /// Auth/Game session-seed LCG, including the original signed 32-bit overflow.
 pub fn next_session_seed(seed: i32) -> u16 {
-    let wrapped = seed
-        .wrapping_mul(214_013)
-        .wrapping_add(2_531_011);
+    let wrapped = seed.wrapping_mul(214_013).wrapping_add(2_531_011);
     ((wrapped >> 16) as u32 & 0x7fff) as u16
 }
 
@@ -234,20 +222,28 @@ mod tests {
                 &[0; 15],
                 &[],
                 MODE_AUTH,
-                CmessRandom { r0: 1, r1: 2, r2: 3 }
+                CmessRandom {
+                    r0: 1,
+                    r1: 2,
+                    r2: 3,
+                }
             ),
             Err(CmessError::InvalidKeyLength(15))
         );
 
         let key = [
-            0x03, 0x14, 0x25, 0x36, 0x47, 0x58, 0x69, 0x7a,
-            0x8b, 0x9c, 0xad, 0xbe, 0xcf, 0xe0, 0xf1, 0x02,
+            0x03, 0x14, 0x25, 0x36, 0x47, 0x58, 0x69, 0x7a, 0x8b, 0x9c, 0xad, 0xbe, 0xcf, 0xe0,
+            0xf1, 0x02,
         ];
         let mut encrypted = cmess_encrypt_with_random(
             &key,
             &[0x07, 0x26, 0x45, 0x64],
             MODE_AUTH,
-            CmessRandom { r0: 0x3b, r1: 0x09, r2: 0xc4 },
+            CmessRandom {
+                r0: 0x3b,
+                r1: 0x09,
+                r2: 0xc4,
+            },
         )
         .unwrap();
 
