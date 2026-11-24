@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "crates/pb-protocol",
+]
+resolver = "2"
