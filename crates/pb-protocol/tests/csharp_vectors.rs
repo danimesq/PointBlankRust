@@ -103,6 +103,6 @@ fn session_seed_lcg_matches_csharp_vectors() {
             seed = i32::from(next);
         }
 
-        assert_eq!(actual.as_slice(), &expected);
+        assert_eq!(actual.as_slice(), expected.as_slice());
     }
 }
