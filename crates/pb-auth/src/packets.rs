@@ -233,16 +233,28 @@ mod reply_tests {
             username: "w17abc".to_owned(),
         };
         let ok = login_ack(0, 123_456_789, 0x87fd_776e, Some(&account));
-        assert_eq!(ok.len(), 2 + 2 + 4 + 12 + 4 + 2 + 16 + 1 + 3 + 1 + 1 + 6 + 8 + 4);
-        assert_eq!(u32::from_le_bytes(ok[4..8].try_into().unwrap()), 123_456_789);
-        assert_eq!(u32::from_le_bytes(ok[20..24].try_into().unwrap()), 0x87fd_776e);
+        assert_eq!(
+            ok.len(),
+            2 + 2 + 4 + 12 + 4 + 2 + 16 + 1 + 3 + 1 + 1 + 6 + 8 + 4
+        );
+        assert_eq!(
+            u32::from_le_bytes(ok[4..8].try_into().unwrap()),
+            123_456_789
+        );
+        assert_eq!(
+            u32::from_le_bytes(ok[20..24].try_into().unwrap()),
+            0x87fd_776e
+        );
         assert_eq!(u16::from_le_bytes(ok[24..26].try_into().unwrap()), 1531);
         assert_eq!(&ok[43..46], b"126");
         assert_eq!(u64::from_le_bytes(ok[54..62].try_into().unwrap()), 126);
 
         let bad = login_ack(error_code::LOGIN_ID_PASS_INCORRECT, 0, 1, None);
         assert_eq!(bad.len(), 2 + 2 + 4 + 12 + 4 + 2 + 16 + 11 + 4);
-        assert_eq!(u32::from_le_bytes(bad[bad.len() - 4..].try_into().unwrap()), 0x8000_0117);
+        assert_eq!(
+            u32::from_le_bytes(bad[bad.len() - 4..].try_into().unwrap()),
+            0x8000_0117
+        );
     }
 
     #[test]
