@@ -67,6 +67,28 @@ per process and shares it between Auth and Game modules in that process; two
 independent Rust processes must instead receive the same configured secret.
 The crate does not silently generate a key, persist one, or invent a fallback.
 
+## PostgreSQL adapter
+
+The `pb-auth-postgres` crate implements `AuthRepository` against the schema
+in the WebPort's `db/init/001_init.sql` and the queries in `server/src/db.ts`.
+It includes:
+
+- Indexed token lookup by the WebPort hash, with conditional lazy migration
+  from legacy plaintext tokens.
+- Active and permanent account-ban queries, including the MUTE exclusion.
+- MAC/IP ban checks and account MAC persistence.
+- Account ban-object expiry lookup.
+- Atomic online ownership via one conditional UPDATE from offline to online,
+  setting `mac_address` and `status=0xff00ffff` in the same statement.
+- Enter-ticket minting through the shared `EnterTicketSigner`.
+
+The host passes an already-connected PostgreSQL `Client`, so it controls
+connection parameters and TLS. This first adapter serializes access through
+one connection; it is a functional integration boundary, not a production
+connection pool. `AuthSessionBridge` remains host-provided because the live
+Auth/Game session registry and account metadata loader are process/runtime
+concerns, not SQL concerns.
+
 ## Protocol behavior
 
 The service uses the reference LOGIN response codes and packet builders already
