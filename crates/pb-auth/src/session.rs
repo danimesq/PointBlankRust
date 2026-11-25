@@ -93,11 +93,17 @@ impl fmt::Display for AuthError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidConfig(message) => write!(f, "invalid Auth config: {message}"),
-            Self::TooManyFrames { received, maximum } => write!(f, "chunk contains {received} frames, maximum is {maximum}"),
+            Self::TooManyFrames { received, maximum } => {
+                write!(f, "chunk contains {received} frames, maximum is {maximum}")
+            },
             Self::PacketFlood => f.write_str("Auth packet rate limit exceeded"),
-            Self::InvalidFirstPacket(opcode) => write!(f, "invalid first Auth packet opcode {opcode}"),
+            Self::InvalidFirstPacket(opcode) => {
+                write!(f, "invalid first Auth packet opcode {opcode}")
+            },
             Self::InvalidCiphertext(error) => write!(f, "invalid Auth CMess payload: {error}"),
-            Self::TruncatedPacket(length) => write!(f, "decrypted Auth packet is only {length} bytes"),
+            Self::TruncatedPacket(length) => {
+                write!(f, "decrypted Auth packet is only {length} bytes")
+            },
         }
     }
 }
@@ -154,16 +160,24 @@ impl AuthSession {
         config: AuthConfig,
     ) -> Result<Self, AuthError> {
         if config.packet_burst == 0 {
-            return Err(AuthError::InvalidConfig("packet_burst must be greater than zero"));
+            return Err(AuthError::InvalidConfig(
+                "packet_burst must be greater than zero",
+            ));
         }
         if !config.packets_per_second.is_finite() || config.packets_per_second <= 0.0 {
-            return Err(AuthError::InvalidConfig("packets_per_second must be finite and greater than zero"));
+            return Err(AuthError::InvalidConfig(
+                "packets_per_second must be finite and greater than zero",
+            ));
         }
         if config.max_frames_per_chunk == 0 {
-            return Err(AuthError::InvalidConfig("max_frames_per_chunk must be greater than zero"));
+            return Err(AuthError::InvalidConfig(
+                "max_frames_per_chunk must be greater than zero",
+            ));
         }
         if config.first_packet_opcodes.is_empty() {
-            return Err(AuthError::InvalidConfig("first_packet_opcodes must not be empty"));
+            return Err(AuthError::InvalidConfig(
+                "first_packet_opcodes must not be empty",
+            ));
         }
 
         Ok(Self {
@@ -179,11 +193,21 @@ impl AuthSession {
         })
     }
 
-    pub fn session_id(&self) -> u32 { self.session_id }
-    pub fn session_seed(&self) -> u16 { self.session_seed }
-    pub fn first_packet_id(&self) -> Option<u16> { self.first_packet_id }
-    pub fn state(&self) -> AuthSessionState { self.state }
-    pub fn seed_mismatches(&self) -> u64 { self.seed_mismatches }
+    pub fn session_id(&self) -> u32 {
+        self.session_id
+    }
+    pub fn session_seed(&self) -> u16 {
+        self.session_seed
+    }
+    pub fn first_packet_id(&self) -> Option<u16> {
+        self.first_packet_id
+    }
+    pub fn state(&self) -> AuthSessionState {
+        self.state
+    }
+    pub fn seed_mismatches(&self) -> u64 {
+        self.seed_mismatches
+    }
 
     /// Process all frames from one transport read. Plain client frames are ignored,
     /// matching the reference Auth/Game TCP session.
@@ -280,9 +304,17 @@ mod tests {
             key,
             &plain,
             MODE_AUTH,
-            CmessRandom { r0: 0x03, r1: 0x09, r2: 0xc4 },
-        ).unwrap();
-        Frame { payload: cipher, encrypted: true }
+            CmessRandom {
+                r0: 0x03,
+                r1: 0x09,
+                r2: 0xc4,
+            },
+        )
+        .unwrap();
+        Frame {
+            payload: cipher,
+            encrypted: true,
+        }
     }
 
     fn session() -> AuthSession {
@@ -294,7 +326,10 @@ mod tests {
         let key = [0x42; 16];
         let mut session = session();
         let seed = next_session_seed(100);
-        let packet = session.process_frame(encrypted_packet(&key, 1281, seed)).unwrap().unwrap();
+        let packet = session
+            .process_frame(encrypted_packet(&key, 1281, seed))
+            .unwrap()
+            .unwrap();
         assert_eq!(packet.opcode, AuthOpcode::Login);
         assert_eq!(packet.body, [0xaa, 0xbb]);
         assert_eq!(session.state(), AuthSessionState::Established);
@@ -316,14 +351,23 @@ mod tests {
     fn silently_drops_seed_outside_sixteen_step_window() {
         let key = [0x42; 16];
         let mut session = session();
-        assert!(session.process_frame(encrypted_packet(&key, 1281, 1)).unwrap().is_none());
+        assert!(session
+            .process_frame(encrypted_packet(&key, 1281, 1))
+            .unwrap()
+            .is_none());
         assert_eq!(session.seed_mismatches(), 1);
     }
 
     #[test]
     fn ignores_plaintext_client_frames() {
         let mut session = session();
-        assert!(session.process_frame(Frame { payload: vec![1, 2, 3], encrypted: false }).unwrap().is_none());
+        assert!(session
+            .process_frame(Frame {
+                payload: vec![1, 2, 3],
+                encrypted: false
+            })
+            .unwrap()
+            .is_none());
     }
 
     #[test]
@@ -333,7 +377,10 @@ mod tests {
         cfg.packet_burst = 1;
         let mut session = AuthSession::new(7, 100, key, cfg).unwrap();
         let seed = next_session_seed(100);
-        assert!(session.process_frame(encrypted_packet(&key, 1281, seed)).unwrap().is_some());
+        assert!(session
+            .process_frame(encrypted_packet(&key, 1281, seed))
+            .unwrap()
+            .is_some());
         assert!(matches!(
             session.process_frame(encrypted_packet(&key, 2309, next_session_seed(seed))),
             Err(AuthError::PacketFlood)
