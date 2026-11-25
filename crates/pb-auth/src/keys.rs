@@ -107,7 +107,7 @@ mod tests {
             generate_session_seed(0x8000),
             Err(SessionKeyError::InvalidSessionId(0x8000))
         ));
-        assert_eq!(generate_session_seed(0x7fff), Ok(0x7fff));
+        assert_eq!(generate_session_seed(0x7fff).unwrap(), 0x7fff);
     }
 
     #[test]
