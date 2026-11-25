@@ -17,7 +17,7 @@ impl fmt::Display for AuthBootstrapError {
             Self::Key(error) => write!(f, "Auth bootstrap key error: {error}"),
             Self::PacketTooLarge => {
                 f.write_str("CONNECT_ACK key material does not fit its length fields")
-            },
+            }
         }
     }
 }
