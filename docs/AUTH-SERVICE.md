@@ -15,8 +15,8 @@ SQL driver, TCP runtime, and Game Server implementation.
 6. Apply the Auth-side access-level / ChannelOnlyGM policy.
 7. Detect an already-online account and delegate the existing-session kick path.
 8. Check the account's stored ban-object expiry.
-9. Load successful-login account metadata and atomically claim online ownership.
-10. Mint the Game enter ticket and emit LOGIN_ACK plus GET_POINT_CASH_ACK.
+9. Load successful-login account metadata and mint the Game enter ticket.
+10. Atomically claim online ownership, then emit LOGIN_ACK plus GET_POINT_CASH_ACK. Minting first prevents a signer failure from stranding the account online.
 
 ## Host integration contract
 
