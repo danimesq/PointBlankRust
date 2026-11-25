@@ -94,25 +94,19 @@ impl EnterTicketSigner {
     ) -> Result<String, SecurityError> {
         let claims = format!("enter.{player_id}.{expiry_unix_secs}");
         let body = URL_SAFE_NO_PAD.encode(claims.as_bytes());
-        let mut mac = HmacSha256::new_from_slice(&self.secret)
-            .expect("HMAC accepts keys of any length");
+        let mut mac =
+            HmacSha256::new_from_slice(&self.secret).expect("HMAC accepts keys of any length");
         mac.update(body.as_bytes());
         let signature = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
         Ok(format!("{body}.{signature}"))
     }
 
     /// Return the player ID only when the MAC is valid and the ticket has not expired.
-    pub fn verify(
-        &self,
-        ticket: &str,
-        now_unix_secs: u64,
-    ) -> Result<u64, SecurityError> {
+    pub fn verify(&self, ticket: &str, now_unix_secs: u64) -> Result<u64, SecurityError> {
         if ticket.len() > MAX_TICKET_LEN {
             return Err(SecurityError::InvalidTicket);
         }
-        let (body, signature) = ticket
-            .split_once('.')
-            .ok_or(SecurityError::InvalidTicket)?;
+        let (body, signature) = ticket.split_once('.').ok_or(SecurityError::InvalidTicket)?;
         if body.is_empty() || signature.is_empty() || signature.contains('.') {
             return Err(SecurityError::InvalidTicket);
         }
