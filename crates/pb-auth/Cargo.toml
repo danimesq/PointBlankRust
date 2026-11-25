@@ -1,0 +1,10 @@
+[package]
+name = "pb-auth"
+version = "0.1.0"
+edition = "2021"
+description = "Point Blank Auth session handshake and packet admission"
+
+[dependencies]
+pb-protocol = { path = "../pb-protocol" }
+rand = "0.8"
+rsa = "0.9"
