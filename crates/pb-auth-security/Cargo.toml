@@ -1,0 +1,10 @@
+[package]
+name = "pb-auth-security"
+version = "0.1.0"
+edition = "2021"
+description = "Point Blank WebPort-compatible token hashing and enter-ticket signing"
+
+[dependencies]
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"

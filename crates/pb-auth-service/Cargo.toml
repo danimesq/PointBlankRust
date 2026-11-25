@@ -1,0 +1,9 @@
+[package]
+name = "pb-auth-service"
+version = "0.1.0"
+edition = "2021"
+description = "Point Blank Auth login policy and account orchestration"
+
+[dependencies]
+pb-auth = { path = "../pb-auth" }
+pb-auth-security = { path = "../pb-auth-security" }
