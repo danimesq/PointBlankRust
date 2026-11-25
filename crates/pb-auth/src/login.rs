@@ -26,22 +26,37 @@ pub struct LoginRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LoginDecodeError {
-    Truncated { field: &'static str, needed: usize, remaining: usize },
-    FieldTooLarge { field: &'static str, length: usize, maximum: usize },
-    InvalidUtf8 { field: &'static str },
+    Truncated {
+        field: &'static str,
+        needed: usize,
+        remaining: usize,
+    },
+    FieldTooLarge {
+        field: &'static str,
+        length: usize,
+        maximum: usize,
+    },
+    InvalidUtf8 {
+        field: &'static str,
+    },
 }
 
 impl std::fmt::Display for LoginDecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Truncated { field, needed, remaining } => write!(
+            Self::Truncated {
+                field,
+                needed,
+                remaining,
+            } => write!(
                 f,
                 "truncated LOGIN {field}: need {needed} bytes, have {remaining}"
             ),
-            Self::FieldTooLarge { field, length, maximum } => write!(
-                f,
-                "LOGIN {field} length {length} exceeds maximum {maximum}"
-            ),
+            Self::FieldTooLarge {
+                field,
+                length,
+                maximum,
+            } => write!(f, "LOGIN {field} length {length} exceeds maximum {maximum}"),
             Self::InvalidUtf8 { field } => write!(f, "LOGIN {field} is not valid UTF-8"),
         }
     }
@@ -54,12 +69,18 @@ struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    fn new(bytes: &'a [u8]) -> Self { Self { bytes, offset: 0 } }
+    fn new(bytes: &'a [u8]) -> Self {
+        Self { bytes, offset: 0 }
+    }
 
     fn take(&mut self, field: &'static str, length: usize) -> Result<&'a [u8], LoginDecodeError> {
         let remaining = self.bytes.len().saturating_sub(self.offset);
         if length > remaining {
-            return Err(LoginDecodeError::Truncated { field, needed: length, remaining });
+            return Err(LoginDecodeError::Truncated {
+                field,
+                needed: length,
+                remaining,
+            });
         }
         let start = self.offset;
         self.offset += length;
@@ -107,7 +128,10 @@ impl LoginRequest {
         let mut cursor = Cursor::new(body);
 
         cursor.skip("header fields", 4)?;
-        let mac: [u8; 6] = cursor.take("MAC address", 6)?.try_into().expect("six-byte slice");
+        let mac: [u8; 6] = cursor
+            .take("MAC address", 6)?
+            .try_into()
+            .expect("six-byte slice");
         cursor.skip("reserved fields before resolution", 21)?;
         let resolution = (
             cursor.u16("resolution width")?,
@@ -124,7 +148,9 @@ impl LoginRequest {
         }
         let list = cursor.take("user file list", list_len)?;
         let user_file_list = std::str::from_utf8(list)
-            .map_err(|_| LoginDecodeError::InvalidUtf8 { field: "user file list" })?
+            .map_err(|_| LoginDecodeError::InvalidUtf8 {
+                field: "user file list",
+            })?
             .to_owned();
         cursor.skip("reserved fields before locale", 16)?;
         let locale = cursor.u8("locale")?;
@@ -182,7 +208,10 @@ mod tests {
     #[test]
     fn decodes_reference_login_field_order_and_token_encoding() {
         let req = LoginRequest::decode(&request_body()).unwrap();
-        assert_eq!(req.hw_spec0, u32::from_le_bytes([0x57, 0x45, 0x42, 0xaa]));
+        assert_eq!(
+            req.hw_spec0,
+            u32::from_le_bytes([0x57, 0x45, 0x42, 0xaa])
+        );
         assert_eq!(req.mac, [0x11, 0x57, 0x45, 0x42, 0xaa, 0xbb]);
         assert_eq!(req.resolution, (1920, 1080));
         assert_eq!(req.resolution_string(), "1920x1080");
@@ -206,7 +235,10 @@ mod tests {
         body[len_at..len_at + 2].copy_from_slice(&4097u16.to_le_bytes());
         assert!(matches!(
             LoginRequest::decode(&body),
-            Err(LoginDecodeError::FieldTooLarge { field: "token length", .. })
+            Err(LoginDecodeError::FieldTooLarge {
+                field: "token length",
+                ..
+            })
         ));
     }
 
@@ -217,7 +249,9 @@ mod tests {
         body[list_at] = 0xff;
         assert!(matches!(
             LoginRequest::decode(&body),
-            Err(LoginDecodeError::InvalidUtf8 { field: "user file list" })
+            Err(LoginDecodeError::InvalidUtf8 {
+                field: "user file list"
+            })
         ));
     }
 }
