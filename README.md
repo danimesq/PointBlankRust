@@ -6,26 +6,32 @@ This repository is the Rust reimplementation of the Point Blank web port. The cu
 
 ## Status
 
-The first implementation slice is the protocol foundation:
+The first implementation slices are the protocol foundation and Match UDP codecs:
 
 - little-endian packet reader and writer;
-- CMess encryption/decryption and packet framing;
-- UDP bitwise rotation and session-seed generation;
-- compatibility tests using byte-for-byte vectors produced from the original C# implementation.
+- CMess encryption/decryption and TCP packet framing;
+- UDP 121 encryption/decryption, Match datagram headers, room handshake and PVP/PING framing;
+- binary16 position/coordinate conversion and Match action-record codecs;
+- compatibility tests using byte-for-byte vectors from the original C# implementation.
 
-The project is being migrated in small, verifiable layers. The browser client, game server, peer-to-peer match core, rendering, physics, and persistence are separate concerns; see [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md).
+The project is being migrated in small, verifiable layers. The browser client, game server, peer-hosted match core, rendering, physics and persistence remain separate concerns.
+
+See:
+- [Porting plan](docs/PORTING_PLAN.md)
+- [Rust Gaming Eclipse integration contract](docs/RUST-GAMING-ECLIPSE.md)
 
 ## Development
 
 Requires a stable Rust toolchain.
 
 ~~~sh
-cargo test -p pb-protocol
+cargo fmt --all -- --check
+cargo test --workspace
 ~~~
 
 ## Assets and game data
 
-Game assets, executables, extracted files, and proprietary Point Blank data do not belong in this repository. Use only a client and assets you are legally entitled to use, and keep generated assets outside version control. The reference project documents its asset-export workflow and legal boundaries.
+Game assets, executables, extracted files and proprietary Point Blank data do not belong in this repository. Use only a client and assets you are legally entitled to use, and keep generated assets outside version control. The reference project documents its asset-export workflow and legal boundaries.
 
 ## License
 
