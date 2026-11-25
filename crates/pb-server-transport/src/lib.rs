@@ -57,7 +57,9 @@ impl std::fmt::Display for TransportError {
 }
 impl std::error::Error for TransportError {}
 impl From<io::Error> for TransportError {
-    fn from(value: io::Error) -> Self { Self::Io(value) }
+    fn from(value: io::Error) -> Self {
+        Self::Io(value)
+    }
 }
 
 /// Cloneable writer for a live session. The caller supplies plaintext or
@@ -77,9 +79,14 @@ impl SessionWriter {
 
     fn send_frame(&self, frame: Vec<u8>) -> io::Result<()> {
         if self.closed.load(Ordering::Acquire) {
-            return Err(io::Error::new(io::ErrorKind::NotConnected, "session is closed"));
+            return Err(io::Error::new(
+                io::ErrorKind::NotConnected,
+                "session is closed",
+            ));
         }
-        let mut stream = self.stream.lock()
+        let mut stream = self
+            .stream
+            .lock()
             .map_err(|_| io::Error::new(io::ErrorKind::Other, "session writer lock poisoned"))?;
         stream.write_all(&frame)
     }
@@ -113,28 +120,44 @@ pub struct TcpServer {
 }
 
 impl TcpServer {
-    pub fn bind(config: TcpServerConfig, handler: Arc<dyn TcpSessionHandler>) -> Result<Self, TransportError> {
+    pub fn bind(
+        config: TcpServerConfig,
+        handler: Arc<dyn TcpSessionHandler>,
+    ) -> Result<Self, TransportError> {
         if config.max_connections == 0 {
-            return Err(TransportError::InvalidConfig("max_connections must be greater than zero"));
+            return Err(TransportError::InvalidConfig(
+                "max_connections must be greater than zero",
+            ));
         }
         if config.max_frames_per_read == 0 {
-            return Err(TransportError::InvalidConfig("max_frames_per_read must be greater than zero"));
+            return Err(TransportError::InvalidConfig(
+                "max_frames_per_read must be greater than zero",
+            ));
         }
         if config.read_timeout.is_zero() {
-            return Err(TransportError::InvalidConfig("read_timeout must be greater than zero"));
+            return Err(TransportError::InvalidConfig(
+                "read_timeout must be greater than zero",
+            ));
         }
         let listener = TcpListener::bind(config.bind_addr)?;
         listener.set_nonblocking(true)?;
         Ok(Self {
-            listener, config, handler, next_session_id: AtomicU64::new(1),
+            listener,
+            config,
+            handler,
+            next_session_id: AtomicU64::new(1),
             active_connections: Arc::new(AtomicUsize::new(0)),
             shutting_down: Arc::new(AtomicBool::new(false)),
             sessions: Arc::new(Mutex::new(HashMap::new())),
         })
     }
 
-    pub fn local_addr(&self) -> io::Result<SocketAddr> { self.listener.local_addr() }
-    pub fn active_connections(&self) -> usize { self.active_connections.load(Ordering::Acquire) }
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.listener.local_addr()
+    }
+    pub fn active_connections(&self) -> usize {
+        self.active_connections.load(Ordering::Acquire)
+    }
 
     /// Run the accept loop until shutdown is called.
     pub fn run(&self) -> io::Result<()> {
@@ -145,7 +168,10 @@ impl TcpServer {
                         let _ = stream.shutdown(std::net::Shutdown::Both);
                         continue;
                     }
-                    let session = SessionInfo { id: self.next_session_id.fetch_add(1, Ordering::Relaxed), peer_addr };
+                    let session = SessionInfo {
+                        id: self.next_session_id.fetch_add(1, Ordering::Relaxed),
+                        peer_addr,
+                    };
                     let handler = Arc::clone(&self.handler);
                     let sessions = Arc::clone(&self.sessions);
                     let active = Arc::clone(&self.active_connections);
@@ -156,14 +182,24 @@ impl TcpServer {
                         .name(format!("pb-tcp-session-{}", session.id))
                         .spawn(move || {
                             let _guard = ActiveConnectionGuard(active);
-                            serve_session(stream, session, handler, sessions, timeout, max_frames, shutting_down);
+                            serve_session(
+                                stream,
+                                session,
+                                handler,
+                                sessions,
+                                timeout,
+                                max_frames,
+                                shutting_down,
+                            );
                         })
                     {
                         self.active_connections.fetch_sub(1, Ordering::AcqRel);
                         return Err(error);
                     }
                 }
-                Err(error) if error.kind() == io::ErrorKind::WouldBlock => thread::sleep(Duration::from_millis(10)),
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(10))
+                }
                 Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
                 Err(error) => return Err(error),
             }
@@ -175,20 +211,30 @@ impl TcpServer {
     pub fn shutdown(&self) {
         self.shutting_down.store(true, Ordering::Release);
         if let Ok(sessions) = self.sessions.lock() {
-            for writer in sessions.values() { writer.shutdown(); }
+            for writer in sessions.values() {
+                writer.shutdown();
+            }
         }
     }
 }
 
 fn reserve_connection(active: &AtomicUsize, limit: usize) -> bool {
-    active.fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
-        if current < limit { Some(current + 1) } else { None }
-    }).is_ok()
+    active
+        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+            if current < limit {
+                Some(current + 1)
+            } else {
+                None
+            }
+        })
+        .is_ok()
 }
 
 struct ActiveConnectionGuard(Arc<AtomicUsize>);
 impl Drop for ActiveConnectionGuard {
-    fn drop(&mut self) { self.0.fetch_sub(1, Ordering::AcqRel); }
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
 }
 
 fn serve_session(
@@ -200,10 +246,21 @@ fn serve_session(
     max_frames_per_read: usize,
     shutting_down: Arc<AtomicBool>,
 ) {
-    let Ok(writer_stream) = reader.try_clone() else { return };
-    if reader.set_read_timeout(Some(timeout)).is_err() { return; }
-    let writer = SessionWriter { stream: Arc::new(Mutex::new(writer_stream)), closed: Arc::new(AtomicBool::new(false)) };
-    if let Ok(mut active) = sessions.lock() { active.insert(session.id, writer.clone()); } else { return; }
+    let Ok(writer_stream) = reader.try_clone() else {
+        return;
+    };
+    if reader.set_read_timeout(Some(timeout)).is_err() {
+        return;
+    }
+    let writer = SessionWriter {
+        stream: Arc::new(Mutex::new(writer_stream)),
+        closed: Arc::new(AtomicBool::new(false)),
+    };
+    if let Ok(mut active) = sessions.lock() {
+        active.insert(session.id, writer.clone());
+    } else {
+        return;
+    }
     handler.on_connect(&session, &writer);
 
     let mut decoder = FrameDecoder::new();
@@ -213,19 +270,32 @@ fn serve_session(
             Ok(0) => break,
             Ok(length) => {
                 let frames = decoder.push(&buffer[..length]);
-                if frames.len() > max_frames_per_read { break; }
+                if frames.len() > max_frames_per_read {
+                    break;
+                }
                 for frame in frames {
-                    if writer.closed.load(Ordering::Acquire) { break; }
+                    if writer.closed.load(Ordering::Acquire) {
+                        break;
+                    }
                     handler.on_frame(&session, frame, &writer);
                 }
             }
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-            Err(error) if matches!(error.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut) => continue,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
+                ) =>
+            {
+                continue
+            }
             Err(_) => break,
         }
     }
 
     writer.shutdown();
-    if let Ok(mut active) = sessions.lock() { active.remove(&session.id); }
+    if let Ok(mut active) = sessions.lock() {
+        active.remove(&session.id);
+    }
     handler.on_disconnect(&session);
 }
