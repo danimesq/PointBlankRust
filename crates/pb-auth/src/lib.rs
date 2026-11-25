@@ -14,7 +14,11 @@ pub use keys::{
     generate_session_keys, generate_session_seed, SessionKeyError, SessionKeys, AUTH_RSA_BITS,
     AUTH_SECURITY_KEY,
 };
-pub use packets::{AuthBootstrap, AuthBootstrapError};
+pub use packets::{
+    account_kick_ack, disconnection_success_ack, error_code, login_ack, point_cash_ack,
+    server_message_error_ack, user_leave_ack, validate_key, AuthBootstrap, AuthBootstrapError,
+    LoginIdentity,
+};
 pub use session::{
     AuthConfig, AuthError, AuthOpcode, AuthPacket, AuthSession, AuthSessionState,
     DEFAULT_FIRST_PACKET_OPCODES, MAX_FRAMES_PER_CHUNK,
