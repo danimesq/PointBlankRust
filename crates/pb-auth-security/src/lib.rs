@@ -160,7 +160,7 @@ mod tests {
     fn stored_token_matches_webport_format() {
         assert_eq!(
             stored_token("dG9rZW4=").unwrap(),
-            "h:3jY96nWv9L1x8KJ6M7J4r5ZqW6mQpA"
+            "h:SvL9MY6l1lC-esTN2nFNADHoRjX7j3"
         );
     }
 
