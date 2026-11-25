@@ -280,6 +280,6 @@ mod tests {
 
     #[test]
     fn account_status_constant_fits_postgres_bigint() {
-        assert_eq!(i64::from(STATUS_AUTH), 4_278_190_079);
+        assert_eq!(i64::from(STATUS_AUTH), 4_278_255_615);
     }
 }
