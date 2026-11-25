@@ -79,7 +79,7 @@ impl fmt::Display for MatchProtocolError {
             Self::InvalidOpcode(opcode) => write!(f, "invalid Match UDP opcode {opcode}"),
             Self::FrameTooLarge(length) => {
                 write!(f, "Match UDP datagram too large: {length} bytes")
-            },
+            }
             Self::InvalidBitwiseShift(shift) => write!(f, "invalid bitwise shift {shift}"),
         }
     }
