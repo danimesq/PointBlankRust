@@ -1,7 +1,7 @@
 //! Auth connection bootstrap packets.
 
 use crate::{generate_session_keys, generate_session_seed, SessionKeyError, SessionKeys};
-use pb_protocol::PacketWriter;
+use pb_protocol::packet::PacketWriter;
 use std::error::Error;
 use std::fmt;
 
