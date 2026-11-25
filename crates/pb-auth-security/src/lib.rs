@@ -114,8 +114,8 @@ impl EnterTicketSigner {
         let signature = URL_SAFE_NO_PAD
             .decode(signature)
             .map_err(|_| SecurityError::InvalidTicket)?;
-        let mut mac = HmacSha256::new_from_slice(&self.secret)
-            .expect("HMAC accepts keys of any length");
+        let mut mac =
+            HmacSha256::new_from_slice(&self.secret).expect("HMAC accepts keys of any length");
         mac.update(body.as_bytes());
         mac.verify_slice(&signature)
             .map_err(|_| SecurityError::InvalidTicket)?;
