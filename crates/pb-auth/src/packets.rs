@@ -67,7 +67,7 @@ impl AuthBootstrap {
             .write_h(self.session_seed)
             .write_d(u32::from(session_id));
 
-        Ok(writer.into_bytes())
+        Ok(writer.to_bytes())
     }
 }
 
@@ -83,8 +83,8 @@ mod tests {
         assert_eq!(&packet[..5], &[0x02, 0x09, 0x00, 0x00, 0x0b]);
         assert_eq!(u16::from_le_bytes([packet[16], packet[17]]), 175);
         assert_eq!(u16::from_le_bytes([packet[18], packet[19]]), 170);
-        assert_eq!(packet[192], 118);
-        assert_eq!(u16::from_le_bytes([packet[195], packet[196]]), bootstrap.session_seed);
+        assert_eq!(packet[193], 118);
+        assert_eq!(u16::from_le_bytes([packet[196], packet[197]]), bootstrap.session_seed);
         assert_eq!(u32::from_le_bytes(packet[198..202].try_into().unwrap()), 7);
     }
 }
