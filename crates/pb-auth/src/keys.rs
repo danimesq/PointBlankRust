@@ -34,11 +34,11 @@ impl fmt::Display for SessionKeyError {
         match self {
             Self::InvalidSessionId(id) => {
                 write!(f, "session id {id} is outside the Auth seed range")
-            },
+            }
             Self::Rsa(message) => write!(f, "RSA session key generation failed: {message}"),
             Self::InvalidModulusLength(length) => {
                 write!(f, "expected a {MODULUS_BYTES}-byte modulus, got {length}")
-            },
+            }
         }
     }
 }
