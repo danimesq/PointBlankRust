@@ -6,3 +6,4 @@ description = "Point Blank Auth login policy and account orchestration"
 
 [dependencies]
 pb-auth = { path = "../pb-auth" }
+pb-auth-security = { path = "../pb-auth-security" }
