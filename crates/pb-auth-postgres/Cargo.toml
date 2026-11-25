@@ -1,0 +1,10 @@
+[package]
+name = "pb-auth-postgres"
+version = "0.1.0"
+edition = "2021"
+description = "PostgreSQL implementation of the Point Blank Auth repository"
+
+[dependencies]
+pb-auth-service = { path = "../pb-auth-service" }
+pb-auth-security = { path = "../pb-auth-security" }
+postgres = "0.19"
