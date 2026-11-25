@@ -382,7 +382,11 @@ mod tests {
             .unwrap()
             .is_some());
         assert!(matches!(
-            session.process_frame(encrypted_packet(&key, 2309, next_session_seed(i32::from(seed)))),
+            session.process_frame(encrypted_packet(
+                &key,
+                2309,
+                next_session_seed(i32::from(seed))
+            )),
             Err(AuthError::PacketFlood)
         ));
     }
