@@ -4,7 +4,7 @@
 //! Authentication owns key exchange, CMess/session keys and seed validation;
 //! Auth/Game own packet meaning and application state.
 
-use pb_protocol::framing::{build_encrypted_frame, build_plain_server_frame, Frame, FrameDecoder};
+use pb_protocol::framing::{build_plain_server_frame, Frame, FrameDecoder};
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -71,13 +71,7 @@ pub struct SessionWriter {
 impl SessionWriter {
     pub fn send_plain(&self, payload: &[u8]) -> io::Result<()> {
         let frame = build_plain_server_frame(payload)
-            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
-        self.send_frame(frame)
-    }
-
-    pub fn send_encrypted(&self, ciphertext: &[u8]) -> io::Result<()> {
-        let frame = build_encrypted_frame(ciphertext)
-            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, format!("{error:?}")))?;
         self.send_frame(frame)
     }
 
