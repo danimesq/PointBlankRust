@@ -5,7 +5,7 @@
 use pb_protocol::match_udp::{
     build_game_data_with_rng, build_handshake, decode_actions, decode_server_game_data,
     encode_user_action, from_half, to_half, ActionOut, HitInfo, MatchProtocolError, PosRot,
-    RoomKey, UDP_VERSION, OP_REGISTER,
+    RoomKey, OP_REGISTER, UDP_VERSION,
 };
 
 fn from_hex(value: &str) -> Vec<u8> {

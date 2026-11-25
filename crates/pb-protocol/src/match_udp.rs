@@ -69,12 +69,17 @@ impl fmt::Display for MatchProtocolError {
         match self {
             Self::Packet(error) => write!(f, "packet error: {error}"),
             Self::InvalidKeyLength { key1, key2 } => {
-                write!(f, "UDP 121 keys must be non-empty (got {key1} and {key2} bytes)")
+                write!(
+                    f,
+                    "UDP 121 keys must be non-empty (got {key1} and {key2} bytes)"
+                )
             }
             Self::InvalidCiphertext => f.write_str("invalid UDP 121 ciphertext"),
             Self::InvalidPadding => f.write_str("invalid UDP 121 padding"),
             Self::InvalidOpcode(opcode) => write!(f, "invalid Match UDP opcode {opcode}"),
-            Self::FrameTooLarge(length) => write!(f, "Match UDP datagram too large: {length} bytes"),
+            Self::FrameTooLarge(length) => {
+                write!(f, "Match UDP datagram too large: {length} bytes")
+            },
             Self::InvalidBitwiseShift(shift) => write!(f, "invalid bitwise shift {shift}"),
         }
     }
@@ -319,10 +324,7 @@ pub fn udp121_decrypt_c2s(
         }
     }
 
-    if decoded_pad.len() < 2
-        || decoded_pad[0] != pad_len as u8
-        || decoded_pad[1] != pad_len as u8
-    {
+    if decoded_pad.len() < 2 || decoded_pad[0] != pad_len as u8 || decoded_pad[1] != pad_len as u8 {
         return Err(MatchProtocolError::InvalidPadding);
     }
 
