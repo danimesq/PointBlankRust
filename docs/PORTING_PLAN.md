@@ -31,7 +31,8 @@ The reference architecture document is the source of truth for component boundar
 |---|---|---|
 | **pb-protocol** | Packet primitives, TCP framing, CMess, UDP 121, Match datagrams/actions, half-float conversion and wire vectors | Active |
 | **pb-shared** | Shared domain types, item/rank/time helpers and validated static-data models | Planned |
-| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |\n| **pb-server** | Auth/Game services, WebSocket front doors, account API and PostgreSQL persistence | Planned |
+| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |
+| **pb-server** | Auth/Game services, WebSocket front doors, account API and PostgreSQL persistence | Planned |
 | **pb-match** | Match datagrams, host-side match core, hit/damage validation and host handoff | Planned |
 | **pb-client-core** | Client state, lobby, inventory, room flow, input and gameplay orchestration | Planned |
 | **pb-client-render** | Rendering, physics, audio and platform integration | Planned; engine decision open |
