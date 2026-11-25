@@ -208,10 +208,7 @@ mod tests {
     #[test]
     fn decodes_reference_login_field_order_and_token_encoding() {
         let req = LoginRequest::decode(&request_body()).unwrap();
-        assert_eq!(
-            req.hw_spec0,
-            u32::from_le_bytes([0x57, 0x45, 0x42, 0xaa])
-        );
+        assert_eq!(req.hw_spec0, u32::from_le_bytes([0x57, 0x45, 0x42, 0xaa]));
         assert_eq!(req.mac, [0x11, 0x57, 0x45, 0x42, 0xaa, 0xbb]);
         assert_eq!(req.resolution, (1920, 1080));
         assert_eq!(req.resolution_string(), "1920x1080");
