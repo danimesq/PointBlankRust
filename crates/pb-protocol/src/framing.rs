@@ -25,6 +25,17 @@ pub struct Frame {
     pub encrypted: bool,
 }
 
+/// Build a plaintext server-to-client frame: [u16 (payload_len + 2)][payload][five zero bytes].
+pub fn build_plain_server_frame(payload: &[u8]) -> Result<Vec<u8>, FrameTooLarge> {
+    let declared_len = payload.len().checked_add(2).ok_or(FrameTooLarge(payload.len()))?;
+    if declared_len > u16::MAX as usize { return Err(FrameTooLarge(payload.len())); }
+    let mut frame = Vec::with_capacity(payload.len() + 7);
+    frame.extend_from_slice(&(declared_len as u16).to_le_bytes());
+    frame.extend_from_slice(payload);
+    frame.extend_from_slice(&[0; 5]);
+    Ok(frame)
+}
+
 /// Incremental decoder for the server-to-client TCP byte stream.
 ///
 /// Plain frames occupy 5 + payload_len wire bytes; encrypted frames occupy
