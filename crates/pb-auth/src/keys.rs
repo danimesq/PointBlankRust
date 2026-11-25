@@ -46,9 +46,9 @@ impl Error for SessionKeyError {}
 
 /// Generate the public key material used by the original CONNECT_ACK path.
 pub fn generate_session_keys(session_id: u32) -> Result<SessionKeys, SessionKeyError> {
-    if session_id == 0 || session_id >= SESSION_SEED_MAX_EXCLUSIVE {
-        // The reference calls Random.Next(sessionId, 0x7fff), whose upper
-        // bound is exclusive and whose lower bound must be smaller.
+    if session_id == 0 || session_id > SESSION_SEED_MAX_EXCLUSIVE {
+        // The reference calls Random.Next(sessionId, 0x7fff). Equal bounds
+        // return that bound; only values greater than 0x7fff are invalid.
         return Err(SessionKeyError::InvalidSessionId(session_id));
     }
 
@@ -87,6 +87,9 @@ pub fn generate_session_seed(session_id: u32) -> Result<u16, SessionKeyError> {
     if session_id == 0 || session_id >= SESSION_SEED_MAX_EXCLUSIVE {
         return Err(SessionKeyError::InvalidSessionId(session_id));
     }
+    if session_id == SESSION_SEED_MAX_EXCLUSIVE {
+        return Ok(SESSION_SEED_MAX_EXCLUSIVE as u16);
+    }
     Ok(OsRng.gen_range(session_id..SESSION_SEED_MAX_EXCLUSIVE) as u16)
 }
 
@@ -101,9 +104,10 @@ mod tests {
             Err(SessionKeyError::InvalidSessionId(0))
         ));
         assert!(matches!(
-            generate_session_seed(0x7fff),
-            Err(SessionKeyError::InvalidSessionId(0x7fff))
+            generate_session_seed(0x8000),
+            Err(SessionKeyError::InvalidSessionId(0x8000))
         ));
+        assert_eq!(generate_session_seed(0x7fff), Ok(0x7fff));
     }
 
     #[test]
