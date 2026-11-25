@@ -189,7 +189,7 @@ mod tests {
 
     fn request_body() -> Vec<u8> {
         let mut body = vec![0x11, 0x57, 0x45, 0x42]; // hardware extraction is bytes 1..5
-        body.extend_from_slice(&[0xaa, 0xbb]); // remaining bytes of the 6-byte MAC
+        body.extend_from_slice(&[0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]); // six-byte MAC
         body.extend_from_slice(&[0; 21]);
         body.extend_from_slice(&1920u16.to_le_bytes());
         body.extend_from_slice(&1080u16.to_le_bytes());
@@ -209,7 +209,7 @@ mod tests {
     fn decodes_reference_login_field_order_and_token_encoding() {
         let req = LoginRequest::decode(&request_body()).unwrap();
         assert_eq!(req.hw_spec0, u32::from_le_bytes([0x57, 0x45, 0x42, 0xaa]));
-        assert_eq!(req.mac, [0x11, 0x57, 0x45, 0x42, 0xaa, 0xbb]);
+        assert_eq!(req.mac, [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]);
         assert_eq!(req.resolution, (1920, 1080));
         assert_eq!(req.resolution_string(), "1920x1080");
         assert_eq!(req.user_file_list, "ABCD");
