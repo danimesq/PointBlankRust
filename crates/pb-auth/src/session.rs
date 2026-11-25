@@ -95,15 +95,15 @@ impl fmt::Display for AuthError {
             Self::InvalidConfig(message) => write!(f, "invalid Auth config: {message}"),
             Self::TooManyFrames { received, maximum } => {
                 write!(f, "chunk contains {received} frames, maximum is {maximum}")
-            },
+            }
             Self::PacketFlood => f.write_str("Auth packet rate limit exceeded"),
             Self::InvalidFirstPacket(opcode) => {
                 write!(f, "invalid first Auth packet opcode {opcode}")
-            },
+            }
             Self::InvalidCiphertext(error) => write!(f, "invalid Auth CMess payload: {error}"),
             Self::TruncatedPacket(length) => {
                 write!(f, "decrypted Auth packet is only {length} bytes")
-            },
+            }
         }
     }
 }
