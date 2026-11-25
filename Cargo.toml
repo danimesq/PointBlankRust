@@ -3,5 +3,6 @@ members = [
     "crates/pb-protocol",
     "crates/pb-server-transport",
     "crates/pb-auth",
+    "crates/pb-auth-service",
 ]
 resolver = "2"
