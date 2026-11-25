@@ -84,7 +84,7 @@ pub fn generate_session_keys(session_id: u32) -> Result<SessionKeys, SessionKeyE
 
 /// Match AuthManager's Random.Next(sessionId, 0x7fff) seed range.
 pub fn generate_session_seed(session_id: u32) -> Result<u16, SessionKeyError> {
-    if session_id == 0 || session_id >= SESSION_SEED_MAX_EXCLUSIVE {
+    if session_id == 0 || session_id > SESSION_SEED_MAX_EXCLUSIVE {
         return Err(SessionKeyError::InvalidSessionId(session_id));
     }
     if session_id == SESSION_SEED_MAX_EXCLUSIVE {
