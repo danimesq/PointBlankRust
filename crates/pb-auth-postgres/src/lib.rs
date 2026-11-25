@@ -5,9 +5,7 @@
 //! configuration) and an AuthSessionBridge for Auth/Game session operations.
 
 use pb_auth_security::EnterTicketSigner;
-use pb_auth_service::{
-    Account, AuthRepository, BanStatus, RepositoryError, STATUS_AUTH,
-};
+use pb_auth_service::{Account, AuthRepository, BanStatus, RepositoryError, STATUS_AUTH};
 use postgres::{Client, Error as PostgresError};
 use std::{
     sync::{Mutex, MutexGuard},
@@ -77,20 +75,24 @@ fn account_from_row(row: &postgres::Row) -> Result<Account, RepositoryError> {
         username: row.get("username"),
         password: row.get("password"),
         rank: row.get("rank"),
-        gold: u32::try_from(gold)
-            .map_err(|_| RepositoryError::Unavailable("negative gold balance in accounts".into()))?,
-        cash: u32::try_from(cash)
-            .map_err(|_| RepositoryError::Unavailable("negative cash balance in accounts".into()))?,
+        gold: u32::try_from(gold).map_err(|_| {
+            RepositoryError::Unavailable("negative gold balance in accounts".into())
+        })?,
+        cash: u32::try_from(cash).map_err(|_| {
+            RepositoryError::Unavailable("negative cash balance in accounts".into())
+        })?,
         tags: u32::try_from(tags)
             .map_err(|_| RepositoryError::Unavailable("negative tags value in accounts".into()))?,
         access: row.get("access_level"),
         online: row.get("online"),
         clan_id: u32::try_from(clan_id)
             .map_err(|_| RepositoryError::Unavailable("negative clan_id in accounts".into()))?,
-        ban_object_id: u64::try_from(row.get::<_, i64>("ban_object_id"))
-            .map_err(|_| RepositoryError::Unavailable("negative ban_object_id in accounts".into()))?,
-        status: u32::try_from(status)
-            .map_err(|_| RepositoryError::Unavailable("accounts.status is outside u32 range".into()))?,
+        ban_object_id: u64::try_from(row.get::<_, i64>("ban_object_id")).map_err(|_| {
+            RepositoryError::Unavailable("negative ban_object_id in accounts".into())
+        })?,
+        status: u32::try_from(status).map_err(|_| {
+            RepositoryError::Unavailable("accounts.status is outside u32 range".into())
+        })?,
     })
 }
 
@@ -141,9 +143,8 @@ impl<B: AuthSessionBridge> AuthRepository for PgAuthRepository<B> {
             let object_id: i64 = r.get("object_id");
             let expires_ms: i64 = r.get("expires_ms");
             Ok((
-                u64::try_from(object_id).map_err(|_| {
-                    RepositoryError::Unavailable("negative ban object_id".into())
-                })?,
+                u64::try_from(object_id)
+                    .map_err(|_| RepositoryError::Unavailable("negative ban object_id".into()))?,
                 expires_ms,
             ))
         })
@@ -171,11 +172,7 @@ impl<B: AuthSessionBridge> AuthRepository for PgAuthRepository<B> {
         Ok(row.get("banned"))
     }
 
-    fn persist_ban_object_id(
-        &self,
-        player_id: u64,
-        object_id: u64,
-    ) -> Result<(), RepositoryError> {
+    fn persist_ban_object_id(&self, player_id: u64, object_id: u64) -> Result<(), RepositoryError> {
         let mut client = self.lock()?;
         client
             .execute(
