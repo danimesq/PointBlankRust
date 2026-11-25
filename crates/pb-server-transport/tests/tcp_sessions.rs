@@ -1,5 +1,7 @@
 use pb_protocol::framing::Frame;
-use pb_server_transport::{SessionInfo, SessionWriter, TcpServer, TcpServerConfig, TcpSessionHandler};
+use pb_server_transport::{
+    SessionInfo, SessionWriter, TcpServer, TcpServerConfig, TcpSessionHandler,
+};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::{Arc, Mutex};
@@ -17,7 +19,10 @@ impl TcpSessionHandler for Recorder {
         self.connected.lock().unwrap().push(session.id);
     }
     fn on_frame(&self, session: &SessionInfo, frame: Frame, writer: &SessionWriter) {
-        self.frames.lock().unwrap().push((session.id, frame.payload.clone(), frame.encrypted));
+        self.frames
+            .lock()
+            .unwrap()
+            .push((session.id, frame.payload.clone(), frame.encrypted));
         writer.send_plain(&[0x34, 0x12, 0xaa]).unwrap();
     }
     fn on_disconnect(&self, session: &SessionInfo) {
@@ -43,7 +48,9 @@ fn accepts_sessions_decodes_frames_and_sends_server_frames() {
         thread::spawn(move || server.run().unwrap())
     };
     let mut client = TcpStream::connect(addr).unwrap();
-    client.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    client
+        .set_read_timeout(Some(Duration::from_secs(1)))
+        .unwrap();
     let input = [4, 0, 0x11, 0x22, 0, 0, 0, 0, 0];
     client.write_all(&input[..3]).unwrap();
     thread::sleep(Duration::from_millis(10));
