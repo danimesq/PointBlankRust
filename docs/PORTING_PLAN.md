@@ -31,7 +31,7 @@ The reference architecture document is the source of truth for component boundar
 |---|---|---|
 | **pb-protocol** | Packet primitives, TCP framing, CMess, UDP 121, Match datagrams/actions, half-float conversion and wire vectors | Active |
 | **pb-shared** | Shared domain types, item/rank/time helpers and validated static-data models | Planned |
-| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |
+| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |\n| **pb-auth** | Auth CONNECT handshake, per-session CMess ingress, seed validation, rate limits and opcode dispatch | Initial protocol/session layer implemented; account handlers pending |
 | **pb-server** | Auth/Game services, WebSocket front doors, account API and PostgreSQL persistence | Planned |
 | **pb-match** | Match datagrams, host-side match core, hit/damage validation and host handoff | Planned |
 | **pb-client-core** | Client state, lobby, inventory, room flow, input and gameplay orchestration | Planned |
@@ -53,7 +53,15 @@ The codec crate does not own sockets, session lifecycle, room state, hit validat
 
 ### 2. Server transport and authentication
 
-Port session lifecycle, key exchange, rate limits, seed validation and Auth packet handlers. Keep raw TCP and WebSocket transport adapters separate while preserving the browser bridge contract.
+**TCP transport is implemented and merged.** The independent `pb-server-transport` crate owns listener/session lifecycle and incremental TCP framing.
+
+**Authentication protocol/session layer is implemented in `pb-auth`.** It generates the 1360-bit CONNECT_ACK key material, derives the 16-byte CMess client/server keys from the modified modulus, emits opcode 2306, decrypts client frames in MODE_AUTH, enforces the Auth first-packet allowlist (1281 LOGIN / 2309 KEEP_ALIVE), checks the next 16 LCG seeds, applies configurable packet token-bucket limits, and dispatches known Auth opcodes through typed handler interfaces.
+
+The RSA operation is compatibility key-material generation only, not a modern security design: the reference does not use the generated RSA private key to encrypt the session. The first four modulus bytes are overwritten with SessionId + 29890, and the two 16-byte CMess keys are sliced from the resulting modulus. The reference seed generator uses `Random.Next(sessionId, 0x7fff)`; this makes session IDs above 32767 invalid for bootstrap, which is explicitly rejected rather than silently changing the range.
+
+Remaining Authentication work: parse and validate the full LOGIN request body; implement token/account lookup, password and client-version checks, ban/MAC/IP policy, LOGIN decision flow, server/channel state and account metadata/inventory handlers; add per-IP connection throttles and first-packet/idle timeouts; and integrate raw-TCP/WebSocket adapters. The current crate includes wire builders for LOGIN_ACK, point-cash, USER_LEAVE, disconnect, account-kick and server-error replies, plus the reference ValidateKey function. Database-backed handlers belong in the future server service crate, not in the byte/session protocol crate.
+
+Keep raw TCP and WebSocket transport adapters separate while preserving the browser bridge contract. The Auth session state machine accepts already-framed transport frames and does not own sockets, database connections, or WebSocket control messages.
 
 ### 3. Game server and persistence
 
