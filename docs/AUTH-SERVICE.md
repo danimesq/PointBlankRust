@@ -47,6 +47,26 @@ Important requirements:
 - The returned enter ticket is an out-of-band WebSocket text frame, not a
   Point Blank binary packet.
 
+## Shared cryptographic primitives
+
+The workspace also contains `pb-auth-security`, which implements the exact
+WebPort credential and enter-ticket formats:
+
+- `stored_token(token)` produces `h:` plus the first 30 Base64URL characters
+  of SHA-256 over the Base64 token string. It rejects empty values and values
+  already carrying the stored-hash prefix.
+- `EnterTicketSigner` creates the WebPort enter-ticket body
+  `enter.<player_id>.<expiry_unix_seconds>`, Base64URL-encodes it, and signs
+  the encoded body with HMAC-SHA256. The default lifetime is 12 hours.
+- Verification checks the HMAC in constant time, validates the claim shape,
+  and rejects expired tickets.
+
+The signer deliberately accepts a 32-byte secret from the host. Auth and Game
+must load the same secret. The TypeScript reference generates one random secret
+per process and shares it between Auth and Game modules in that process; two
+independent Rust processes must instead receive the same configured secret.
+The crate does not silently generate a key, persist one, or invent a fallback.
+
 ## Protocol behavior
 
 The service uses the reference LOGIN response codes and packet builders already
