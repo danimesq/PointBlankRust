@@ -303,6 +303,10 @@ impl<R: AuthRepository> AuthService<R> {
 
         self.repository
             .prepare_successful_login(account.player_id)?;
+        // Mint before claiming online so a ticket-signing failure cannot strand
+        // the account in online=true. A losing concurrent attempt simply drops
+        // its unused ticket after the atomic compare-and-set fails.
+        let ticket = self.repository.mint_enter_ticket(account.player_id)?;
         if !self
             .repository
             .claim_login(account.player_id, &mac_storage)?
@@ -312,8 +316,6 @@ impl<R: AuthRepository> AuthService<R> {
             self.repository.handle_existing_login(&latest)?;
             return Ok(outcome);
         }
-
-        let ticket = self.repository.mint_enter_ticket(account.player_id)?;
         let key = validate_key(account.player_id, session_id, req.hw_spec0);
         Ok(LoginOutcome {
             packets: vec![
