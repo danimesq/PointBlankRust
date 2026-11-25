@@ -32,9 +32,13 @@ pub enum SessionKeyError {
 impl fmt::Display for SessionKeyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidSessionId(id) => write!(f, "session id {id} is outside the Auth seed range"),
+            Self::InvalidSessionId(id) => {
+                write!(f, "session id {id} is outside the Auth seed range")
+            },
             Self::Rsa(message) => write!(f, "RSA session key generation failed: {message}"),
-            Self::InvalidModulusLength(length) => write!(f, "expected a {MODULUS_BYTES}-byte modulus, got {length}"),
+            Self::InvalidModulusLength(length) => {
+                write!(f, "expected a {MODULUS_BYTES}-byte modulus, got {length}")
+            },
         }
     }
 }
@@ -70,7 +74,12 @@ pub fn generate_session_keys(session_id: u32) -> Result<SessionKeys, SessionKeyE
     server_key.copy_from_slice(&modulus[..16]);
     client_key.copy_from_slice(&modulus[16..32]);
 
-    Ok(SessionKeys { modulus, exponent, server_key, client_key })
+    Ok(SessionKeys {
+        modulus,
+        exponent,
+        server_key,
+        client_key,
+    })
 }
 
 /// Match AuthManager's Random.Next(sessionId, 0x7fff) seed range.
@@ -87,8 +96,14 @@ mod tests {
 
     #[test]
     fn rejects_session_ids_outside_the_reference_seed_range() {
-        assert!(matches!(generate_session_seed(0), Err(SessionKeyError::InvalidSessionId(0))));
-        assert!(matches!(generate_session_seed(0x7fff), Err(SessionKeyError::InvalidSessionId(0x7fff))));
+        assert!(matches!(
+            generate_session_seed(0),
+            Err(SessionKeyError::InvalidSessionId(0))
+        ));
+        assert!(matches!(
+            generate_session_seed(0x7fff),
+            Err(SessionKeyError::InvalidSessionId(0x7fff))
+        ));
     }
 
     #[test]
