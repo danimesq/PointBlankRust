@@ -5,6 +5,7 @@ edition = "2021"
 description = "Point Blank Auth session handshake and packet admission"
 
 [dependencies]
+base64 = "0.22"
 pb-protocol = { path = "../pb-protocol" }
 rand = "0.8"
 rsa = "0.9"
