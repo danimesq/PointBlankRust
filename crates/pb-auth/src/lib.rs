@@ -10,11 +10,11 @@ mod packets;
 mod session;
 
 pub use dispatch::{dispatch_auth_packet, AuthDispatchError, AuthHandlers};
-pub use packets::{AuthBootstrap, AuthBootstrapError};
 pub use keys::{
     generate_session_keys, generate_session_seed, SessionKeyError, SessionKeys, AUTH_RSA_BITS,
     AUTH_SECURITY_KEY,
 };
+pub use packets::{AuthBootstrap, AuthBootstrapError};
 pub use session::{
     AuthConfig, AuthError, AuthOpcode, AuthPacket, AuthSession, AuthSessionState,
     DEFAULT_FIRST_PACKET_OPCODES, MAX_FRAMES_PER_CHUNK,
