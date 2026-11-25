@@ -100,3 +100,157 @@ mod tests {
         assert_eq!(u32::from_le_bytes(packet[198..202].try_into().unwrap()), 7);
     }
 }
+
+/// Auth protocol error codes returned by LOGIN_ACK and disconnect packets.
+pub mod error_code {
+    pub const SUCCESS: u32 = 0x0000_0000;
+    pub const FAIL: u32 = 0x8000_0000;
+    pub const LOGIN_ALREADY_LOGIN: u32 = 0x8000_0101;
+    pub const LOGIN_TIME_OUT_2: u32 = 0x8000_0106;
+    pub const LOGIN_BLOCK_ACCOUNT: u32 = 0x8000_0107;
+    pub const LOGIN_ID_PASS_INCORRECT: u32 = 0x8000_0117;
+    pub const LOGIN_BLOCK_IP: u32 = 0x8000_0121;
+    pub const DISCONNECT_INVALID_LOGIN: u32 = 0x8000_0100;
+}
+
+/// Minimal account identity required by LOGIN_ACK.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoginIdentity {
+    pub player_id: u64,
+    pub username: String,
+}
+
+/// Reproduce AllUtils.ValidateKey: {hw%999:000}{pid%999:000}{session%999:000}.
+pub fn validate_key(player_id: u64, session_id: u32, hw_spec0: u32) -> u32 {
+    let value = format!(
+        "{:03}{:03}{:03}",
+        hw_spec0 % 999,
+        player_id % 999,
+        session_id % 999
+    );
+    value.parse::<u32>().unwrap_or(0)
+}
+
+/// C# BaseServerPacket.WriteS: append all UTF-8 bytes, then pad by UTF-16 code-unit count.
+fn write_compat_string(writer: &mut PacketWriter, value: &str, count: usize) {
+    writer.write_b(value.as_bytes());
+    writer.zeros(count.saturating_sub(value.encode_utf16().count()));
+}
+
+/// PROTOCOL_BASE_LOGIN_ACK (1283).
+pub fn login_ack(
+    error: u32,
+    verification_key: u32,
+    features: u32,
+    account: Option<&LoginIdentity>,
+) -> Vec<u8> {
+    let mut writer = PacketWriter::new();
+    writer
+        .write_h(1283)
+        .write_h(0)
+        .write_d(verification_key)
+        .write_b(&[0x01, 0x03, 0x00])
+        .zeros(9)
+        .write_d(features)
+        .write_h(1531)
+        .zeros(16);
+
+    if error == error_code::SUCCESS {
+        if let Some(account) = account {
+            let player_id = account.player_id.to_string();
+            let player_id_len = player_id.encode_utf16().count();
+            let username_len = account.username.encode_utf16().count();
+            writer.write_c(player_id_len as u8);
+            write_compat_string(&mut writer, &player_id, player_id_len);
+            writer.write_c(0).write_c(username_len as u8);
+            write_compat_string(&mut writer, &account.username, username_len);
+            writer.write_b(&account.player_id.to_le_bytes());
+        } else {
+            writer.zeros(11);
+        }
+    } else {
+        writer.zeros(11);
+    }
+
+    writer.write_d(error);
+    writer.into_bytes()
+}
+
+/// PROTOCOL_AUTH_GET_POINT_CASH_ACK (1061).
+pub fn point_cash_ack(error: u32, cash: u32, gold: u32, tags: u32) -> Vec<u8> {
+    let mut writer = PacketWriter::with_capacity(18);
+    writer
+        .write_h(1061)
+        .write_d(error)
+        .write_d(cash)
+        .write_d(gold)
+        .write_d(tags);
+    writer.into_bytes()
+}
+
+/// PROTOCOL_BASE_USER_LEAVE_ACK (2329).
+pub fn user_leave_ack(error: u32) -> Vec<u8> {
+    let mut writer = PacketWriter::with_capacity(8);
+    writer.write_h(2329).write_d(error).write_h(0);
+    writer.into_bytes()
+}
+
+/// PROTOCOL_SERVER_MESSAGE_DISCONNECTIONSUCCESS_ACK (3074).
+pub fn disconnection_success_ack(error: u32) -> Vec<u8> {
+    let mut writer = PacketWriter::with_capacity(6);
+    writer.write_h(3074).write_d(error);
+    writer.into_bytes()
+}
+
+/// PROTOCOL_AUTH_ACCOUNT_KICK_ACK (2009). The C# constructor argument is not serialized.
+pub fn account_kick_ack() -> Vec<u8> {
+    let mut writer = PacketWriter::with_capacity(22);
+    writer.write_h(2009).zeros(19).write_c(0);
+    writer.into_bytes()
+}
+
+/// PROTOCOL_SERVER_MESSAGE_ERROR_ACK (3078).
+pub fn server_message_error_ack(error: u32) -> Vec<u8> {
+    let mut writer = PacketWriter::with_capacity(6);
+    writer.write_h(3078).write_d(error);
+    writer.into_bytes()
+}
+
+#[cfg(test)]
+mod reply_tests {
+    use super::*;
+
+    #[test]
+    fn validate_key_matches_reference_vectors() {
+        assert_eq!(validate_key(126, 1, 0x02424557), 494_126_001);
+        assert_eq!(validate_key(1000, 999, 5), 5_001_000);
+    }
+
+    #[test]
+    fn login_ack_success_and_failure_layouts_match_reference() {
+        let account = LoginIdentity {
+            player_id: 126,
+            username: "w17abc".to_owned(),
+        };
+        let ok = login_ack(0, 123_456_789, 0x87fd_776e, Some(&account));
+        assert_eq!(ok.len(), 2 + 2 + 4 + 12 + 4 + 2 + 16 + 1 + 3 + 1 + 1 + 6 + 8 + 4);
+        assert_eq!(u32::from_le_bytes(ok[4..8].try_into().unwrap()), 123_456_789);
+        assert_eq!(u32::from_le_bytes(ok[24..28].try_into().unwrap()), 0x87fd_776e);
+        assert_eq!(u16::from_le_bytes(ok[28..30].try_into().unwrap()), 1531);
+        assert_eq!(&ok[46..49], b"126");
+        assert_eq!(u64::from_le_bytes(ok[58..66].try_into().unwrap()), 126);
+
+        let bad = login_ack(error_code::LOGIN_ID_PASS_INCORRECT, 0, 1, None);
+        assert_eq!(bad.len(), 2 + 2 + 4 + 12 + 4 + 2 + 16 + 11 + 4);
+        assert_eq!(u32::from_le_bytes(bad[bad.len() - 4..].try_into().unwrap()), 0x8000_0117);
+    }
+
+    #[test]
+    fn auth_reply_packet_opcodes_and_lengths_match_reference() {
+        assert_eq!(point_cash_ack(0, 1, 2, 3).len(), 18);
+        assert_eq!(user_leave_ack(0), [0x19, 0x09, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(disconnection_success_ack(0).len(), 6);
+        assert_eq!(account_kick_ack().len(), 22);
+        assert_eq!(server_message_error_ack(0).len(), 6);
+    }
+}
