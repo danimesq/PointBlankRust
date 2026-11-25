@@ -6,6 +6,7 @@
 
 mod dispatch;
 mod keys;
+mod login;
 mod packets;
 mod session;
 
@@ -14,6 +15,7 @@ pub use keys::{
     generate_session_keys, generate_session_seed, SessionKeyError, SessionKeys, AUTH_RSA_BITS,
     AUTH_SECURITY_KEY,
 };
+pub use login::{LoginDecodeError, LoginRequest};
 pub use packets::{
     account_kick_ack, disconnection_success_ack, error_code, login_ack, point_cash_ack,
     server_message_error_ack, user_leave_ack, validate_key, AuthBootstrap, AuthBootstrapError,
