@@ -15,13 +15,17 @@ impl fmt::Display for AuthBootstrapError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Key(error) => write!(f, "Auth bootstrap key error: {error}"),
-            Self::PacketTooLarge => f.write_str("CONNECT_ACK key material does not fit its length fields"),
+            Self::PacketTooLarge => {
+                f.write_str("CONNECT_ACK key material does not fit its length fields")
+            },
         }
     }
 }
 impl Error for AuthBootstrapError {}
 impl From<SessionKeyError> for AuthBootstrapError {
-    fn from(value: SessionKeyError) -> Self { Self::Key(value) }
+    fn from(value: SessionKeyError) -> Self {
+        Self::Key(value)
+    }
 }
 
 /// Per-connection material sent in CONNECT_ACK (2306).
@@ -44,12 +48,17 @@ impl AuthBootstrap {
 
     /// Build the exact CONNECT_ACK payload. TCP framing is applied by the transport.
     pub fn connect_ack(&self) -> Result<Vec<u8>, AuthBootstrapError> {
-        let key_blob_len = self.keys.modulus.len()
+        let key_blob_len = self
+            .keys
+            .modulus
+            .len()
             .checked_add(self.keys.exponent.len())
             .and_then(|length| length.checked_add(2))
             .ok_or(AuthBootstrapError::PacketTooLarge)?;
-        let key_blob_len = u16::try_from(key_blob_len).map_err(|_| AuthBootstrapError::PacketTooLarge)?;
-        let modulus_len = u16::try_from(self.keys.modulus.len()).map_err(|_| AuthBootstrapError::PacketTooLarge)?;
+        let key_blob_len =
+            u16::try_from(key_blob_len).map_err(|_| AuthBootstrapError::PacketTooLarge)?;
+        let modulus_len = u16::try_from(self.keys.modulus.len())
+            .map_err(|_| AuthBootstrapError::PacketTooLarge)?;
         let session_id = self.session_id as u16;
 
         let mut writer = PacketWriter::with_capacity(202);
@@ -84,7 +93,10 @@ mod tests {
         assert_eq!(u16::from_le_bytes([packet[16], packet[17]]), 175);
         assert_eq!(u16::from_le_bytes([packet[18], packet[19]]), 170);
         assert_eq!(packet[193], 118);
-        assert_eq!(u16::from_le_bytes([packet[196], packet[197]]), bootstrap.session_seed);
+        assert_eq!(
+            u16::from_le_bytes([packet[196], packet[197]]),
+            bootstrap.session_seed
+        );
         assert_eq!(u32::from_le_bytes(packet[198..202].try_into().unwrap()), 7);
     }
 }
