@@ -43,8 +43,8 @@ pub fn dispatch_auth_packet(
 ) -> Result<(), AuthDispatchError> {
     match packet.opcode {
         AuthOpcode::Login => {
-            let request = LoginRequest::decode(&packet.body)
-                .map_err(AuthDispatchError::MalformedLogin)?;
+            let request =
+                LoginRequest::decode(&packet.body).map_err(AuthDispatchError::MalformedLogin)?;
             handlers.login(request)
         }
         AuthOpcode::KeepAlive => handlers.keep_alive(packet),
