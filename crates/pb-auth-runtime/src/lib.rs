@@ -89,6 +89,7 @@ struct RuntimeSession {
     protocol_id: u32,
     auth: AuthSession,
     authenticated_player: Option<u64>,
+    preserve_online_on_disconnect: bool,
 }
 
 /// A concrete TcpSessionHandler that runs CONNECT_ACK, CMess ingress, seed
@@ -153,12 +154,16 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
             peer_ip: transport.peer_addr.ip(),
             writer,
             authenticated_player: None,
+            preserve_online_on_disconnect: false,
         };
         let dispatch_result = dispatch_auth_packet(&mut handlers, packet);
-        if let Some(player_id) = handlers.authenticated_player {
-            if let Ok(mut sessions) = self.sessions.lock() {
-                if let Some(session) = sessions.get_mut(&transport.id) {
+        if let Ok(mut sessions) = self.sessions.lock() {
+            if let Some(session) = sessions.get_mut(&transport.id) {
+                if let Some(player_id) = handlers.authenticated_player {
                     session.authenticated_player = Some(player_id);
+                }
+                if handlers.preserve_online_on_disconnect {
+                    session.authenticated_player = None;
                 }
             }
         }
@@ -260,6 +265,7 @@ struct RuntimePacketHandlers<'a, R: AuthRepository> {
     peer_ip: IpAddr,
     writer: &'a SessionWriter,
     authenticated_player: Option<u64>,
+    preserve_online_on_disconnect: bool,
 }
 impl<R: AuthRepository> RuntimePacketHandlers<'_, R> {
     fn send_packets(&self, packets: &[Vec<u8>]) -> Result<(), AuthRuntimeError> {
@@ -334,7 +340,18 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
     fn get_point_cash(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn get_game_server_state(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn get_channel_list(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
-    fn user_leave(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
+    fn user_leave(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> {
+        self.writer.send_plain(&pb_auth::user_leave_ack(0))
+            .map_err(|e| AuthDispatchError::Handler(e.to_string()))?;
+        // USER_LEAVE is a handoff to Game, not an account logout.
+        self.preserve_online_on_disconnect = true;
+        let writer = self.writer.clone();
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(100));
+            writer.shutdown();
+        });
+        Ok(())
+    }
     fn get_user_info(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn get_inventory_info(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn get_option(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
