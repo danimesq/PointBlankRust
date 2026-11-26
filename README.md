@@ -10,7 +10,8 @@ The first implementation slices are the protocol foundation and Match UDP codecs
 
 - little-endian packet reader and writer;
 - CMess encryption/decryption and TCP packet framing;
-- TCP server transport with bounded connections, per-client sessions, ordered frame dispatch and graceful shutdown;\n- Auth session bootstrap, CONNECT_ACK key material, CMess ingress, seed-window validation, rate limiting and typed opcode dispatch;
+- TCP server transport with bounded connections, per-client sessions, ordered frame dispatch and graceful shutdown;
+- Auth session bootstrap, CONNECT_ACK key material, CMess ingress, seed-window validation, rate limiting and typed opcode dispatch;
 - UDP 121 encryption/decryption, Match datagram headers, room handshake and PVP/PING framing;
 - binary16 position/coordinate conversion and Match action-record codecs;
 - compatibility tests using byte-for-byte vectors from the original C# implementation.
@@ -31,7 +32,7 @@ cargo fmt --all -- --check
 cargo test --workspace
 ~~~
 
-n## Come with your own binary
+## Come with your own binary
 
 PointBlankRust does not distribute the Point Blank executable, installer, client data, extracted assets or proprietary game files. Bring a client copy you are legally entitled to use (the classic “come with your own binary” model) and keep it outside version control.
 
