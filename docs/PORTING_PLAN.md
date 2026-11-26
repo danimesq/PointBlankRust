@@ -96,6 +96,6 @@ See [RUST-GAMING-ECLIPSE.md](RUST-GAMING-ECLIPSE.md) for dependency direction, F
 
 - Is the final client a native desktop app, a browser/WASM app or both?
 - Which rendering and physics backend best fits those targets?
-- Should WebRTC remain the match transport, or is a native transport also required?
+- Should WebRTC remain the match transport, or is a native transport also required? See [Iroh multiplayer study](IROH-MULTIPLAYER-STUDY.md) for the native Iroh/LAN evaluation; the transport decision remains open until the prototype and benchmarks pass.
 - Which parts of the existing data/config pipeline should remain external tools versus become Rust-native?
 - Which target profile should be the first end-to-end 3D validation target?
