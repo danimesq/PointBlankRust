@@ -363,11 +363,6 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
     fn unknown(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
 }
 
-/// Whether a session is still waiting for its first valid Auth packet.
-pub fn session_state(handler_sessions: &Mutex<HashMap<u64, RuntimeSession>>, id: u64) -> Option<AuthSessionState> {
-    handler_sessions.lock().ok()?.get(&id).map(|s| s.auth.state())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
