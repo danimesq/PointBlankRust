@@ -198,8 +198,10 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
 
 impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
     fn on_connect(&self, session: &SessionInfo, writer: &SessionWriter) {
+        let mut allocated_protocol_id = None;
         let result = (|| {
             let protocol_id = self.allocate_protocol_id()?;
+            allocated_protocol_id = Some(protocol_id);
             let bootstrap = AuthBootstrap::generate(protocol_id)
                 .map_err(|e| AuthRuntimeError::Bootstrap(e.to_string()))?;
             let auth = AuthSession::new(
@@ -229,8 +231,8 @@ impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
         if let Err(error) = result {
             eprintln!("[pb-auth-runtime] session {} bootstrap failed: {error}", session.id);
             // The session was not registered, so release any allocated protocol ID.
-            if let Ok(mut active) = self.active_protocol_ids.lock() {
-                let _ = active.remove(&((session.id.saturating_sub(1) as u32 % 0x7fff) + 1));
+            if let Some(protocol_id) = allocated_protocol_id {
+                self.release_protocol_id(protocol_id);
             }
             writer.shutdown();
         }
