@@ -12,6 +12,7 @@ The first implementation slices are the protocol foundation and Match UDP codecs
 - CMess encryption/decryption and TCP packet framing;
 - TCP server transport with bounded connections, per-client sessions, ordered frame dispatch and graceful shutdown;
 - Auth session bootstrap, CONNECT_ACK key material, CMess ingress, seed-window validation, rate limiting and typed opcode dispatch;
+- Auth LOGIN service, PostgreSQL repository adapter and TCP runtime integration;
 - UDP 121 encryption/decryption, Match datagram headers, room handshake and PVP/PING framing;
 - binary16 position/coordinate conversion and Match action-record codecs;
 - compatibility tests using byte-for-byte vectors from the original C# implementation.
