@@ -459,6 +459,7 @@ mod tests {
         fn mint_enter_ticket(&self, _: u64) -> Result<String, RepositoryError> {
             Ok("signed-ticket".into())
         }
+        fn release_login(&self, _: u64) -> Result<(), RepositoryError> { Ok(()) }
     }
     fn request() -> LoginRequest {
         LoginRequest {
