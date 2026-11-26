@@ -20,6 +20,7 @@ The project is being migrated in small, verifiable layers. The browser client, g
 See:
 - [Porting plan](docs/PORTING_PLAN.md)
 - [Rust Gaming Eclipse integration contract](docs/RUST-GAMING-ECLIPSE.md)
+- [Auth runtime integration](docs/AUTH-RUNTIME.md)
 
 ## Development
 
