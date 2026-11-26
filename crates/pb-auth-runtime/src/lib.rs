@@ -199,10 +199,8 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
 impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
     fn on_connect(&self, session: &SessionInfo, writer: &SessionWriter) {
         let mut allocated_protocol_id = None;
-        let mut allocated_protocol_id = None;
         let result = (|| {
             let protocol_id = self.allocate_protocol_id()?;
-            allocated_protocol_id = Some(protocol_id);
             allocated_protocol_id = Some(protocol_id);
             let bootstrap = AuthBootstrap::generate(protocol_id)
                 .map_err(|e| AuthRuntimeError::Bootstrap(e.to_string()))?;
