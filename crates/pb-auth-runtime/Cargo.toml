@@ -7,6 +7,7 @@ description = "Point Blank Auth runtime integration for TCP sessions"
 [dependencies]
 pb-auth = { path = "../pb-auth" }
 pb-auth-service = { path = "../pb-auth-service" }
+pb-auth-postgres = { path = "../pb-auth-postgres" }
 pb-server-transport = { path = "../pb-server-transport" }
 pb-protocol = { path = "../pb-protocol" }
 serde_json = "1"
