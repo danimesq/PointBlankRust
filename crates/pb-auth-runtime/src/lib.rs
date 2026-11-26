@@ -6,7 +6,7 @@
 
 use pb_auth::{
     dispatch_auth_packet, AuthBootstrap, AuthDispatchError, AuthHandlers, AuthPacket,
-    AuthSession, AuthSessionState,
+    AuthSession,
 };
 use pb_auth_service::{
     AuthConfig as LoginConfig, AuthRepository, AuthService, CloseMode, LoginError,
@@ -154,8 +154,7 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
             writer,
             authenticated_player: None,
         };
-        dispatch_auth_packet(&mut handlers, packet)
-            .map_err(|e: AuthDispatchError| AuthRuntimeError::Dispatch(e.to_string()))?;
+        let dispatch_result = dispatch_auth_packet(&mut handlers, packet);
         if let Some(player_id) = handlers.authenticated_player {
             if let Ok(mut sessions) = self.sessions.lock() {
                 if let Some(session) = sessions.get_mut(&transport.id) {
@@ -163,6 +162,7 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
                 }
             }
         }
+        dispatch_result.map_err(|e: AuthDispatchError| AuthRuntimeError::Dispatch(e.to_string()))?;
         Ok(())
     }
 
@@ -304,6 +304,8 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
             std::time::Instant::now(),
         ).map_err(|e: LoginError| AuthDispatchError::Handler(e.to_string()))?;
 
+        self.authenticated_player = outcome.authenticated_player;
+
         // The WebPort emits enterTicket as a JSON WebSocket TEXT message before
         // LOGIN_ACK/CASH_ACK. It is deliberately not encoded as a PB packet.
         if self.config.send_enter_ticket {
@@ -324,7 +326,6 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
 
         self.send_packets(&outcome.packets)
             .map_err(|e| AuthDispatchError::Handler(e.to_string()))?;
-        self.authenticated_player = outcome.authenticated_player;
         self.close_after(outcome.close);
         Ok(())
     }
