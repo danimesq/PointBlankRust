@@ -8,6 +8,7 @@ use pb_auth::{
     dispatch_auth_packet, AuthBootstrap, AuthDispatchError, AuthHandlers, AuthPacket,
     AuthSession,
 };
+use pb_auth_postgres::{AuthSessionBridge, PgAuthRepository};
 use pb_auth_service::{
     AuthConfig as LoginConfig, AuthRepository, AuthService, CloseMode, LoginError,
 };
@@ -67,7 +68,6 @@ pub enum AuthRuntimeError {
     Bootstrap(String),
     Session(String),
     Dispatch(String),
-    Login(String),
     Output(io::Error),
     SessionIdExhausted,
 }
@@ -77,7 +77,6 @@ impl std::fmt::Display for AuthRuntimeError {
             Self::Bootstrap(e) => write!(f, "Auth CONNECT bootstrap failed: {e}"),
             Self::Session(e) => write!(f, "Auth session failed: {e}"),
             Self::Dispatch(e) => write!(f, "Auth packet dispatch failed: {e}"),
-            Self::Login(e) => write!(f, "Auth LOGIN failed: {e}"),
             Self::Output(e) => write!(f, "Auth session output failed: {e}"),
             Self::SessionIdExhausted => f.write_str("all Auth session IDs are in use"),
         }
@@ -258,6 +257,17 @@ impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
                 }
             }
         }
+    }
+}
+
+/// Convenience constructor for the concrete PostgreSQL repository adapter.
+impl<B: AuthSessionBridge + 'static> AuthRuntimeHandler<PgAuthRepository<B>> {
+    pub fn with_postgres_repository(
+        repository: PgAuthRepository<B>,
+        config: AuthRuntimeConfig,
+        text_sink: Arc<dyn AuthTextFrameSink>,
+    ) -> Self {
+        Self::new(AuthService::new(repository), config, text_sink)
     }
 }
 
