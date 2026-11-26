@@ -1,0 +1,11 @@
+[package]
+name = "pb-auth-runtime"
+version = "0.1.0"
+edition = "2021"
+description = "Point Blank Auth runtime integration for TCP sessions"
+
+[dependencies]
+pb-auth = { path = "../pb-auth" }
+pb-auth-service = { path = "../pb-auth-service" }
+pb-server-transport = { path = "../pb-server-transport" }
+serde_json = "1"
