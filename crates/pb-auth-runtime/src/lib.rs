@@ -341,7 +341,9 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
                 }).to_string();
                 self.text_sink
                     .send_text_frame(self.transport_session_id, &text)
-                    .map_err(|e| AuthDispatchError::Handler(format!("enterTicket WebSocket text frame: {e}")))?;
+                    .map_err(|e| {
+                        AuthDispatchError::Handler(format!("enterTicket WebSocket text frame: {e}"))
+                    })?;
             }
         }
 
@@ -353,7 +355,12 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
 
     fn keep_alive(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn get_point_cash(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
-    fn get_game_server_state(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
+    fn get_game_server_state(
+        &mut self,
+        _packet: AuthPacket,
+    ) -> Result<(), AuthDispatchError> {
+        Ok(())
+    }
     fn get_channel_list(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn user_leave(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> {
         self.writer.send_plain(&pb_auth::user_leave_ack(0))
@@ -368,7 +375,12 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
         Ok(())
     }
     fn get_user_info(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
-    fn get_inventory_info(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
+    fn get_inventory_info(
+        &mut self,
+        _packet: AuthPacket,
+    ) -> Result<(), AuthDispatchError> {
+        Ok(())
+    }
     fn get_option(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
     fn unknown(&mut self, _packet: AuthPacket) -> Result<(), AuthDispatchError> { Ok(()) }
 }
