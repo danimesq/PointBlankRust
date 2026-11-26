@@ -10,7 +10,9 @@ The first implementation slices are the protocol foundation and Match UDP codecs
 
 - little-endian packet reader and writer;
 - CMess encryption/decryption and TCP packet framing;
-- TCP server transport with bounded connections, per-client sessions, ordered frame dispatch and graceful shutdown;\n- Auth session bootstrap, CONNECT_ACK key material, CMess ingress, seed-window validation, rate limiting and typed opcode dispatch;
+- TCP server transport with bounded connections, per-client sessions, ordered frame dispatch and graceful shutdown;
+- Auth session bootstrap, CONNECT_ACK key material, CMess ingress, seed-window validation, rate limiting and typed opcode dispatch;
+- Auth LOGIN service, PostgreSQL repository adapter and TCP runtime integration;
 - UDP 121 encryption/decryption, Match datagram headers, room handshake and PVP/PING framing;
 - binary16 position/coordinate conversion and Match action-record codecs;
 - compatibility tests using byte-for-byte vectors from the original C# implementation.
@@ -20,6 +22,7 @@ The project is being migrated in small, verifiable layers. The browser client, g
 See:
 - [Porting plan](docs/PORTING_PLAN.md)
 - [Rust Gaming Eclipse integration contract](docs/RUST-GAMING-ECLIPSE.md)
+- [Auth runtime integration](docs/AUTH-RUNTIME.md)
 
 ## Development
 
@@ -29,6 +32,29 @@ Requires a stable Rust toolchain.
 cargo fmt --all -- --check
 cargo test --workspace
 ~~~
+
+## Come with your own binary
+
+PointBlankRust does not distribute the Point Blank executable, installer, client data, extracted assets or proprietary game files. Bring a client copy you are legally entitled to use (the classic “come with your own binary” model) and keep it outside version control.
+
+Obtain the client from the official publisher for your region whenever possible. Download methods vary by publisher, region and client version. This is not hypothetical: the official Point Blank Türkiye download portal documents both **Quick Download** and **Torrent** options, and its installation guide explicitly describes **Full Client Download** and **Torrent Client Download**:
+
+- [Official Point Blank Türkiye download page](https://pb.tamgame.com/game/download)
+- [Official Point Blank Türkiye installation guide](https://pb.tamgame.com/game/init)
+
+The official page notes that a BitTorrent application is required for the torrent option. This documents an official regional distribution channel, not a guarantee that a torrent is currently offered in Brazil or for every Point Blank build. Do not substitute unofficial mirrors, repacks or private-server bundles for an official client.
+
+Suggested local layout (never commit the client):
+
+~~~text
+PointBlankRust/
+  Clients/
+    PointBlank/
+      PointBlank.exe
+      Pack/
+~~~
+
+Keep local client paths ignored by Git. Do not upload executables, .torrent files, magnet links, extracted proprietary data or generated game assets to this repository.
 
 ## Assets and game data
 

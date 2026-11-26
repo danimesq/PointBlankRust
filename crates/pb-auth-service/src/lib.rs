@@ -123,6 +123,8 @@ pub trait AuthRepository: Send + Sync {
     /// Atomically writes MAC, status=STATUS_AUTH and online=true only if still offline.
     fn claim_login(&self, player_id: u64, mac: &str) -> Result<bool, RepositoryError>;
     fn mint_enter_ticket(&self, player_id: u64) -> Result<String, RepositoryError>;
+    /// Release online ownership when the authenticated transport session is destroyed.
+    fn release_login(&self, player_id: u64) -> Result<(), RepositoryError>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -200,6 +202,11 @@ impl<R: AuthRepository> AuthService<R> {
     }
     pub fn repository(&self) -> &R {
         &self.repository
+    }
+
+    /// Clear Auth online ownership after a destructive disconnect.
+    pub fn release_login(&self, player_id: u64) -> Result<(), LoginError> {
+        self.repository.release_login(player_id).map_err(LoginError::from)
     }
 
     /// unix_time_ms is wall-clock UTC for ban expiry; monotonic_now is only for throttling.
@@ -452,6 +459,7 @@ mod tests {
         fn mint_enter_ticket(&self, _: u64) -> Result<String, RepositoryError> {
             Ok("signed-ticket".into())
         }
+        fn release_login(&self, _: u64) -> Result<(), RepositoryError> { Ok(()) }
     }
     fn request() -> LoginRequest {
         LoginRequest {

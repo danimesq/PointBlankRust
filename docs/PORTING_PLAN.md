@@ -31,7 +31,12 @@ The reference architecture document is the source of truth for component boundar
 |---|---|---|
 | **pb-protocol** | Packet primitives, TCP framing, CMess, UDP 121, Match datagrams/actions, half-float conversion and wire vectors | Active |
 | **pb-shared** | Shared domain types, item/rank/time helpers and validated static-data models | Planned |
-| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |\n| **pb-auth** | Auth CONNECT handshake, per-session CMess ingress, seed validation, rate limits and opcode dispatch | Initial protocol/session layer implemented; account handlers pending |
+| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |
+| **pb-auth** | Auth CONNECT handshake, per-session CMess ingress, seed validation, rate limits and opcode dispatch | Implemented; remaining non-LOGIN opcodes pending |
+| **pb-auth-service** | LOGIN policy and account orchestration | Implemented |
+| **pb-auth-security** | Stored-token hashing and enter-ticket signing/verification | Implemented |
+| **pb-auth-postgres** | PostgreSQL AuthRepository adapter and session bridge contract | Implemented; single-connection adapter |
+| **pb-auth-runtime** | CONNECT_ACK, per-connection Auth runtime, LOGIN dispatch and TCP transport integration | Initial LOGIN runtime integrated; WebSocket host adapter and other Auth opcodes pending |
 | **pb-server** | Auth/Game services, WebSocket front doors, account API and PostgreSQL persistence | Planned |
 | **pb-match** | Match datagrams, host-side match core, hit/damage validation and host handoff | Planned |
 | **pb-client-core** | Client state, lobby, inventory, room flow, input and gameplay orchestration | Planned |
@@ -59,9 +64,26 @@ The codec crate does not own sockets, session lifecycle, room state, hit validat
 
 The RSA operation is compatibility key-material generation only, not a modern security design: the reference does not use the generated RSA private key to encrypt the session. The first four modulus bytes are overwritten with SessionId + 29890, and the two 16-byte CMess keys are sliced from the resulting modulus. The reference seed generator uses `Random.Next(sessionId, 0x7fff)`; this makes session IDs above 32767 invalid for bootstrap, which is explicitly rejected rather than silently changing the range.
 
-Remaining Authentication work: parse and validate the full LOGIN request body; implement token/account lookup, password and client-version checks, ban/MAC/IP policy, LOGIN decision flow, server/channel state and account metadata/inventory handlers; add per-IP connection throttles and first-packet/idle timeouts; and integrate raw-TCP/WebSocket adapters. The current crate includes wire builders for LOGIN_ACK, point-cash, USER_LEAVE, disconnect, account-kick and server-error replies, plus the reference ValidateKey function. Database-backed handlers belong in the future server service crate, not in the byte/session protocol crate.
+The LOGIN request decoder, token/account lookup, client-version and payload validation, ban/MAC/IP policy, LOGIN decision flow, PostgreSQL adapter and raw-TCP runtime integration now exist across pb-auth, pb-auth-service, pb-auth-security, pb-auth-postgres and pb-auth-runtime. Remaining Authentication work includes server/channel state, account metadata/inventory/options handlers, complete Game handoff behavior, per-IP connection throttles, first-packet/idle timeouts, and a concrete WebSocket host adapter for the separate enterTicket text frame. The protocol crate retains wire builders for LOGIN_ACK, point-cash, USER_LEAVE, disconnect, account-kick and server-error replies, plus the reference ValidateKey function.
 
 Keep raw TCP and WebSocket transport adapters separate while preserving the browser bridge contract. The Auth session state machine accepts already-framed transport frames and does not own sockets, database connections, or WebSocket control messages.
+
+### 2.1 Auth runtime integration
+
+The next integration slice is implemented in pb-auth-runtime. It composes the existing Auth protocol/session crate, LOGIN service, PostgreSQL repository adapter and pb-server-transport callback contract:
+
+- Allocate a protocol session ID in the original 1..32767 range.
+- Generate CONNECT_ACK key material and send opcode 2306 as a plaintext server frame.
+- Create one AuthSession per accepted transport session.
+- Process encrypted client frames through CMess MODE_AUTH, first-opcode admission and the 16-step LCG seed window.
+- Dispatch decoded packets through dispatch_auth_packet and run LOGIN through AuthService.
+- Send LOGIN_ACK and GET_POINT_CASH_ACK as separate plaintext PB server frames.
+- Send enterTicket only through an explicit WebSocket text-frame sink, as JSON text and before the PB login replies. Raw TCP deployments leave this side channel disabled; the ticket is never inserted into a PB binary packet.
+- Release the account online/status claim when an authenticated session is destroyed. USER_LEAVE is treated as a Game handoff and does not clear online ownership.
+
+The WebSocket text-frame sink is deliberately a host-provided adapter: pb-server-transport currently owns raw TCP sessions and cannot manufacture a WebSocket TEXT frame on a raw TCP socket. A WebSocket host must bind the sink to the same logical session and write an actual WebSocket text message. Enabling ticket delivery without such a sink fails the login output path instead of silently placing JSON in the binary stream.
+
+The runtime currently wires LOGIN and the session lifecycle. Remaining Auth opcodes (server/channel state, inventory/account metadata and Game handoff operations beyond USER_LEAVE) need their corresponding service handlers before this is a complete production Auth server. The PostgreSQL adapter still uses its initial serialized single connection; pool/TLS deployment hardening remains a host concern.
 
 ### 3. Game server and persistence
 

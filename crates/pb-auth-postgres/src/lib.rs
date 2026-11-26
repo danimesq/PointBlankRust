@@ -260,6 +260,15 @@ impl<B: AuthSessionBridge> AuthRepository for PgAuthRepository<B> {
         Ok(changed == 1)
     }
 
+    fn release_login(&self, player_id: u64) -> Result<(), RepositoryError> {
+        let mut client = self.lock()?;
+        client.execute(
+            "UPDATE accounts SET online = FALSE, status = $1 WHERE player_id = $2",
+            &[&(i64::from(pb_auth_service::STATUS_NONE)), &(player_id as i64)],
+        ).map_err(db_error)?;
+        Ok(())
+    }
+
     fn mint_enter_ticket(&self, player_id: u64) -> Result<String, RepositoryError> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
