@@ -199,8 +199,10 @@ impl<R: AuthRepository + 'static> AuthRuntimeHandler<R> {
 impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
     fn on_connect(&self, session: &SessionInfo, writer: &SessionWriter) {
         let mut allocated_protocol_id = None;
+        let mut allocated_protocol_id = None;
         let result = (|| {
             let protocol_id = self.allocate_protocol_id()?;
+            allocated_protocol_id = Some(protocol_id);
             allocated_protocol_id = Some(protocol_id);
             let bootstrap = AuthBootstrap::generate(protocol_id)
                 .map_err(|e| AuthRuntimeError::Bootstrap(e.to_string()))?;
@@ -366,4 +368,30 @@ impl<R: AuthRepository> AuthHandlers for RuntimePacketHandlers<'_, R> {
 /// Whether a session is still waiting for its first valid Auth packet.
 pub fn session_state(handler_sessions: &Mutex<HashMap<u64, RuntimeSession>>, id: u64) -> Option<AuthSessionState> {
     handler_sessions.lock().ok()?.get(&id).map(|s| s.auth.state())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enter_ticket_is_json_text_and_not_a_pb_packet() {
+        let text = json!({
+            "t": "enterTicket",
+            "pid": "126",
+            "ticket": "encoded-body.signature"
+        }).to_string();
+        let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(value["t"], "enterTicket");
+        assert_eq!(value["pid"], "126");
+        assert_eq!(value["ticket"], "encoded-body.signature");
+        assert!(!text.as_bytes().starts_with(&1283u16.to_le_bytes()));
+    }
+
+    #[test]
+    fn raw_tcp_text_sink_refuses_to_masquerade_as_websocket() {
+        let sink = NoopAuthTextFrameSink;
+        let error = sink.send_text_frame(1, "{\\"t\\":\\"enterTicket\\"}").unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::Unsupported);
+    }
 }
