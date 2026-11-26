@@ -89,7 +89,6 @@ struct RuntimeSession {
     protocol_id: u32,
     auth: AuthSession,
     authenticated_player: Option<u64>,
-    preserve_online_on_disconnect: bool,
 }
 
 /// A concrete TcpSessionHandler that runs CONNECT_ACK, CMess ingress, seed
@@ -229,6 +228,10 @@ impl<R: AuthRepository + 'static> TcpSessionHandler for AuthRuntimeHandler<R> {
         })();
         if let Err(error) = result {
             eprintln!("[pb-auth-runtime] session {} bootstrap failed: {error}", session.id);
+            // The session was not registered, so release any allocated protocol ID.
+            if let Ok(mut active) = self.active_protocol_ids.lock() {
+                let _ = active.remove(&((session.id.saturating_sub(1) as u32 % 0x7fff) + 1));
+            }
             writer.shutdown();
         }
     }
