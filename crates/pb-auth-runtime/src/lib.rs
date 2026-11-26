@@ -394,7 +394,7 @@ mod tests {
     #[test]
     fn raw_tcp_text_sink_refuses_to_masquerade_as_websocket() {
         let sink = NoopAuthTextFrameSink;
-        let error = sink.send_text_frame(1, "{\\"t\\":\\"enterTicket\\"}").unwrap_err();
+        let error = sink.send_text_frame(1, r#"{"t":"enterTicket"}"#).unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::Unsupported);
     }
 }
