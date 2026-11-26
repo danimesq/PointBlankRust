@@ -31,7 +31,8 @@ The reference architecture document is the source of truth for component boundar
 |---|---|---|
 | **pb-protocol** | Packet primitives, TCP framing, CMess, UDP 121, Match datagrams/actions, half-float conversion and wire vectors | Active |
 | **pb-shared** | Shared domain types, item/rank/time helpers and validated static-data models | Planned |
-| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |\n| **pb-auth** | Auth CONNECT handshake, per-session CMess ingress, seed validation, rate limits and opcode dispatch | Initial protocol/session layer implemented; account handlers pending |
+| **pb-server-transport** | TCP listener, connection/session lifecycle and stream transport | Implemented; protocol callbacks are transport-neutral |
+| **pb-auth** | Auth CONNECT handshake, per-session CMess ingress, seed validation, rate limits and opcode dispatch | Initial protocol/session layer implemented; account handlers pending |
 | **pb-server** | Auth/Game services, WebSocket front doors, account API and PostgreSQL persistence | Planned |
 | **pb-match** | Match datagrams, host-side match core, hit/damage validation and host handoff | Planned |
 | **pb-client-core** | Client state, lobby, inventory, room flow, input and gameplay orchestration | Planned |
@@ -63,7 +64,7 @@ Remaining Authentication work: parse and validate the full LOGIN request body; i
 
 Keep raw TCP and WebSocket transport adapters separate while preserving the browser bridge contract. The Auth session state machine accepts already-framed transport frames and does not own sockets, database connections, or WebSocket control messages.
 
-n### 2.1 Auth runtime integration
+### 2.1 Auth runtime integration
 
 The next integration slice is implemented in pb-auth-runtime. It composes the existing Auth protocol/session crate, LOGIN service, PostgreSQL repository adapter and pb-server-transport callback contract:
 
