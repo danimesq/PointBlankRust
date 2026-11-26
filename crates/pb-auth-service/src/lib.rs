@@ -204,6 +204,11 @@ impl<R: AuthRepository> AuthService<R> {
         &self.repository
     }
 
+    /// Clear Auth online ownership after a destructive disconnect.
+    pub fn release_login(&self, player_id: u64) -> Result<(), LoginError> {
+        self.repository.release_login(player_id).map_err(LoginError::from)
+    }
+
     /// unix_time_ms is wall-clock UTC for ban expiry; monotonic_now is only for throttling.
     pub fn login(
         &self,
